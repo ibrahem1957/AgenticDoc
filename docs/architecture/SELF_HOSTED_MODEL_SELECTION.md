@@ -30,7 +30,7 @@ Notation: **Lic** = class from §1. **VRAM bf16** [ESTIMATE] = weights only; rea
 
 | Model ID (version) | Licence & commercial terms | Lic | Size / VRAM bf16 | CPU / GPU | Languages | Arabic evidence | Install / inference | Private-server deployment |
 |---|---|---|---|---|---|---|---|---|
-| **NAMAA-Space/Qari-OCR-0.4.0-VL-4B-Instruct** (rev 2026-02-01) — **mandatory** | Apache-2.0 tag; **no LICENSE file**; base `Qwen/Qwen3-VL-4B-Instruct` Apache-2.0 tag | A-tag | LoRA 0.31 GB + base 4.44B → ≈ 9 GB; 12–16 GB GPU | GPU; CPU only via a self-built GGUF (merge + convert) | Arabic only | [VENDOR] CER 0.122 / WER 0.256 (unnamed set); third-party (Nuqta card) QARI CER 0.64 on Misraj-DocOCR | transformers + peft; vLLM with LoRA; llama.cpp after merge | vLLM OpenAI server (Docker) or llama.cpp server |
+| **NAMAA-Space/Qari-OCR-0.4.0-VL-4B-Instruct** (rev `aa65b4a4`, 2026-02-01) — **mandatory, priority** | Apache-2.0 tag; no LICENSE file; **publisher statement** (Qari-OCR Team, discussion #1): Apache 2.0 allows research and commercial use (see §2.1a). Adapter base `unsloth/Qwen3-VL-4B-Instruct` (Apache-2.0 tag) → `Qwen/Qwen3-VL-4B-Instruct` (Apache-2.0 tag; upstream `QwenLM/Qwen3-VL` has an Apache LICENSE file). Training dataset `seemorg/books-ocr`: MIT tag | **A-tag, publisher-confirmed** | LoRA 0.31 GB + base 4.44B → ≈ 9 GB; 12–16 GB GPU | GPU; CPU only via a self-built GGUF (merge + convert) | Arabic only | [VENDOR] CER 0.122 / WER 0.256 (unnamed set); third-party (Nuqta card) QARI CER 0.64 on Misraj-DocOCR | transformers + peft; vLLM with LoRA; llama.cpp after merge | vLLM OpenAI server (Docker) or llama.cpp server |
 | **NAMAA-Space/Qari-OCR-v0.3-VL-2B-Instruct** — **mandatory** | Apache-2.0 tag, no LICENSE file | A-tag | 2.21B → ≈ 4.4 GB | CPU (slow) / GPU ≥ 8 GB | Arabic | [VENDOR] CER 0.300 / WER 0.485; HTML/Markdown structure | transformers | vLLM / transformers worker |
 | **NAMAA-Space/Qari-OCR-0.2.2.1-VL-2B-Instruct** — **mandatory** | Apache-2.0 tag; base `unsloth/Qwen2-VL-2B-Instruct-unsloth-bnb-4bit` Apache-2.0 tag | A-tag | adapter 0.12 GB + 2.25B (4-bit) | **CUDA** (bitsandbytes) | Arabic | [VENDOR] best raw-text CER 0.061 (per v0.3 card) | transformers + peft + bitsandbytes | GPU worker |
 | **PaddlePaddle/PaddleOCR-VL-1.6** (rev 2026-11-06) — **mandatory** | Apache-2.0, **LICENSE file present**; base ERNIE-4.5-0.3B (check its licence file at kickoff) | A | 0.96B → ≈ 2 GB | CPU (Paddle CPU or official GGUF) / GPU | 109 languages incl. Arabic | [VENDOR] v1 Arabic edit distance 0.122; OmniDocBench SOTA claims | `paddleocr[doc-parser]`; vLLM backend; official GGUF `PaddlePaddle/PaddleOCR-VL-1.6-GGUF` via llama.cpp | PaddleOCR serving / vLLM / llama.cpp Docker |
@@ -44,6 +44,21 @@ Notation: **Lic** = class from §1. **VRAM bf16** [ESTIMATE] = weights only; rea
 | opendatalab/MinerU2.5-2509-1.2B | **AGPL-3.0** (copyleft, network clause) | **B** | 1.16B | GPU / CPU | multilingual | none | MinerU toolkit | Only with legal approval |
 | allenai/olmOCR-2-7B-1025 | Apache-2.0 tag | A-tag | 8.29B | GPU | English-centric | none | vLLM | Low relevance for Arabic. Optional |
 | Tesseract 5 + `ara` traineddata (GitHub `tesseract-ocr`) | Apache-2.0 | A | small | CPU | Arabic | KITAB-Bench CER 0.54 | apt / binaries | Floor baseline |
+
+### 2.1a Qari-OCR licence verification (2026-11-16, user-supplied lead)
+Source: https://huggingface.co/NAMAA-Space/Qari-OCR-0.4.0-VL-4B-Instruct/discussions/1
+
+| Question | Finding | Evidence |
+|---|---|---|
+| Who answered? | The `Omartificial-Intelligence-Space` account (labelled the NAMAA org, "Network for Advancing Modern ArabicNLP & AI"), signed "Qari-OCR Team" | Discussion #1, replies dated Jul 19 and Jul 23 (no year shown) |
+| What was stated? | "The Qari-OCR model is released under the Apache 2.0 license, which allows both research and commercial use," including fine-tuning, derivative models, adapters/weights and commercial integration, "subject to the terms of the Apache 2.0 license" | Reply 1 |
+| Which version? | Posted on the **0.4.0** repo. The statement says "the Qari-OCR model" without a version. Treat it as covering 0.4.0. For v0.3 and 0.2.2.1, rely on their Apache-2.0 tags plus this statement until confirmed per version | Repo page |
+| Pinned revision | `aa65b4a46336c6cc608e7da5a015f8e71472a68b` (lastModified 2026-02-01) | HF API |
+| Base-model chain | `adapter_config.json` → `base_model_name_or_path: unsloth/Qwen3-VL-4B-Instruct` (Apache-2.0 tag), a re-upload of `Qwen/Qwen3-VL-4B-Instruct` (Apache-2.0 tag). Upstream code repo `QwenLM/Qwen3-VL` LICENSE = Apache License. **Discrepancy:** the card's tags name the Qwen original while the adapter config names the Unsloth copy. At download time, compare the Unsloth base's weight hashes with the Qwen original, and prefer the Qwen original if they're identical | HF API, adapter_config.json, GitHub |
+| Training data | Card tags `seemorg/books-ocr` (MIT tag). The team **did not answer** the dataset-licence questions and said "we do not provide the full dataset." Rights in the underlying book scans are unknown | Reply 2; HF dataset API |
+| Dependencies (inference) | transformers (Apache-2.0), peft (Apache-2.0), PyTorch (BSD-3), qwen-vl-utils (Apache-2.0, verify at install); vLLM (Apache-2.0) or llama.cpp (MIT) for serving. Unsloth is a *training* tool and isn't needed for inference | Package metadata (verify pinned versions at E2-A) |
+| **Security** | The repo contains `training_args.bin`, a **Python pickle**. It must **never be loaded**: use safetensors only, and don't use `torch.load` on repo files | HF file list |
+| Classification | **A-tag, publisher-confirmed**: eligible and a priority E2 candidate. **Production still requires legal sign-off** (residual risks: no LICENSE file, no version in the statement, unanswered training-data rights) | — |
 
 ### 2.2 Vision-language models (OCR, charts, tables, Stage-2 visual analysis)
 
@@ -150,6 +165,13 @@ Image names, tags and CUDA versions are verified and pinned at implementation ti
 | **P3: multi-GPU cluster** | ≥ 4 × 80 GB | Qwen3-VL-235B, GLM-4.6V, DeepSeek-V3.2 |
 
 **Required input from the user:** the target company server specification (GPU model and count, VRAM, RAM, CPU, OS, Docker/Kubernetes, air-gapped or not). Final candidate ranking must report results **per hardware profile the company can actually provide.**
+
+## 5a. User decisions (2026-11-16)
+1. **The OpenRouter PDF parser is removed from E1-D.** AC-E1.15h/16 are superseded. The E1 lab makes no network calls.
+2. **No company server specification is available yet.** Evaluations must not assume one. Every run records **measured** RAM and VRAM, the actual hardware used (CPU, GPU model, driver, OS), and a reproducible deployment configuration: model ID + revision, weight hashes, serving stack + version, container image + tag or exact install commands, launch flags, and quantization. Hardware profiles in §5 are planning aids, not assumptions.
+3. **dots.ocr and MinerU are research candidates** (licence research, published evidence). **Don't install or run** them, or any model with an unresolved or incompatible licence, without the user's explicit approval for that model.
+4. **Local GPUs and private or rented GPU environments may be considered** for evaluation. **No rental costs** and **no transfer of documents to external infrastructure** without explicit user approval each time (which documents, which provider, estimated cost).
+5. **Legal approval is required before any production deployment** of any model, including Class A.
 
 ## 6. Evaluation rules under the self-hosting policy
 1. Only Class A / A-tag candidates by default; Class B only with explicit user approval per model.

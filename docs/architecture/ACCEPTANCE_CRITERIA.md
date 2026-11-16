@@ -50,8 +50,8 @@ Verification: Claude re-runs every command and walks through the UI checklist (i
 **Behaviour**
 8. **Ground-truth gating:** metrics are computed only for `verified` GT pages. A draft page yields no metric (test). Aggregates show `verified k/n`. Editing a verified page makes it draft, increments the version and marks old metrics stale (test).
 9. **Seeding bias flag:** GT seeded from adapter X sets `seeded_from`, and X's metrics on those pages carry the bias flag (test + UI).
-10. **No external call without action:** with external APIs toggled off, no HTTP request is made by any code path (test using a transport that fails on any call). With it on, an API run needs a confirmation object containing file sha256, page list, engine, model and estimate. A run without it raises (test). Spend guards block over-limit estimates (test).
-11. **Secrets:** the API key never appears in workspace files, exports, logs or rendered UI (test: run with a sentinel key, then grep the workspace dir, exports and captured logs).
+10. **No external calls (revised 2026-11-16, self-hosted-only policy):** the E1 lab makes no outbound network connection in any code path. A socket guard fails the test on any outbound connection during a full fixture bench and a UI page run. ~~API confirmation objects and spend guards~~ are superseded because the API adapter was removed.
+11. **Secrets (revised):** no credential is read, stored or displayed by the lab. A test with a sentinel `OPENROUTER_API_KEY` in the environment confirms it never appears in workspace files, exports, logs or rendered UI.
 12. **Temporary storage:** "End workspace" deletes the workspace directory. The TTL sweep deletes workspaces older than the TTL (injectable clock test). Uploaded filenames never appear in disk paths (test with `../../x.pdf` and an Arabic filename `تقرير ٢٠٢٥.pdf`). Exports exclude originals and extracted text unless their checkboxes are ticked (test).
 13. **Robustness:** a malformed PDF, an encrypted PDF, and a timeout (adapter stub that sleeps) each produce a clean `error`/`timeout` `RunResult`. The UI keeps working and other adapters still run (tests).
 14. **Reproducibility:** each `RunResult` records library version, params, variant, doc sha256 and environment. Re-running with identical inputs is a cache hit. "Re-run" bypasses the cache. Export → import of a bundle restores GT, reviews and results, and refuses a mismatched sha256 (tests).
@@ -65,8 +65,8 @@ Verification: Claude re-runs every command and walks through the UI checklist (i
   e. submit a human review;
   f. see the three tables (automatic metrics / diagnostics / human review) kept separate, plus timing;
   g. export a bundle, end the workspace, start a new one, import the bundle;
-  h. with a key configured and external APIs enabled, run `text.openrouter_fileparser` with `cloudflare-ai` on a 1-page fixture, see the confirmation dialog, then usage and cost with `cost_source`. If no key is available, Codex states "not run" and Claude runs it.
-16. **File-parser fact check:** Codex's report states, with a captured redacted response excerpt, whether `annotations[].file.content` contains the parsed text and whether it has page delimiters. If the text isn't available, the adapter ships `enabled=false` with the reason shown in the UI.
+  h. ~~OpenRouter file-parser run~~ **SUPERSEDED 2026-11-16** by the self-hosted-only policy (user decision). Not required.
+16. ~~File-parser fact check~~ **SUPERSEDED 2026-11-16** by the self-hosted-only policy (user decision). Not required. (The number is kept so later item numbers stay stable.)
 
 **User requirements R2–R5, R8 (confirmed 2026-11-16)**
 17. **Raw vs cleaned (R2):** every variant result references its raw run, and the raw text is byte-identical before and after variants are computed (test). In Compare, RAW and CLEANED panes are separate and labelled, and raw stays visible whenever a cleaned pane is shown (UI walkthrough). Exports contain raw and every cleaned variant as separate records.
@@ -88,7 +88,7 @@ Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) (E2P); policy: [SEL
 
 5. Before each download, the licence (HF API + LICENSE file), pinned revision, size, dependencies and hardware path are recorded, and the user approves explicitly. No test or CI job downloads models.
 6. Weights live only under `LAB_MODELS_DIR` (outside the repo). `.gitignore` covers weight formats. A test asserts no tracked file > 10 MB under `Project sdaia/lab/`. `models.lock.json` holds the sha256 of every model file and runtime binary.
-7. `trust_remote_code` is used only at pinned revisions whose remote Python files are listed in the report and reviewed by Claude. Heavy runtimes are isolated in separate venvs or binaries, and E1's environment is unchanged.
+7. `trust_remote_code` is used only at pinned revisions whose remote Python files are listed in the report and reviewed by Claude. **No pickle-based file from a model repo is ever loaded** (e.g. Qari 0.4.0's `training_args.bin`). Weights are loaded from safetensors or GGUF only, and a test asserts the loader rejects `.bin`/`.pt`/`.pkl` paths unless the user explicitly approves. Heavy runtimes are isolated in separate venvs or binaries, and E1's environment is unchanged.
 8. No user document, page image or OCR output of user documents is committed. Cloud-GPU runs upload only the pages the user confirmed, and the run checklist includes deleting the instance and its storage.
 
 **Identical inputs and metrics**

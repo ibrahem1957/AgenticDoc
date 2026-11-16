@@ -92,3 +92,75 @@ Independent reviews of Codex's work. Each entry states whether verification was 
   - (c) Whether Class B models (dots.ocr, MinerU) may be evaluated.
   - (d) Whether a private/rented GPU may be used for evaluation, and which documents may go there.
   - (e) Legal contact for licence sign-off of A-tag models.
+
+## Entry 6 — User decisions on the self-hosting strategy (2026-11-16)
+1. **Approved:** OpenRouter PDF parser removed from E1-D. AC-E1.15h/16 superseded; AC-E1.10/11 revised to "no network / no credentials" (CODEX_TASK revision note + §9 E1-D; ACCEPTANCE_CRITERIA; LAB §5.2/§6).
+2. No server spec yet: evaluations record measured RAM/VRAM, the actual hardware, and reproducible deployment configurations without assuming a company server (SHM §5a.2).
+3. dots.ocr and MinerU are research candidates. No install or run of models with unresolved or incompatible licences without explicit approval (SHM §5a.3).
+4. Local, private or rented GPUs may be considered. No rental cost or document transfer without explicit approval (SHM §5a.4).
+5. Legal approval is required before production deployment (SHM §5a.5).
+6. **Qari-OCR licence lead verified** (SHM §2.1a):
+   - The publisher's statement (Qari-OCR Team, discussion #1) says Apache 2.0, including commercial use.
+   - Revision pinned at `aa65b4a4`.
+   - Base chain: `unsloth/Qwen3-VL-4B-Instruct` → `Qwen/Qwen3-VL-4B-Instruct`, both Apache-2.0 tags; the upstream GitHub LICENSE is Apache.
+   - The tagged training dataset `seemorg/books-ocr` is MIT. The team didn't answer the dataset-rights questions.
+   - **Security:** the repo has a pickle file `training_args.bin` that must never be loaded (AC-E2.7 updated).
+   - Classification: A-tag, publisher-confirmed, priority candidate. Legal sign-off is still required for production.
+
+## Entry 7 — E1-A independent review (2026-11-16) — **NOT APPROVED (correction round 1 issued)**
+**Verification type:**
+- **Static review** of Codex's *uncommitted* E1-A working tree, via a read-only snapshot copied to Claude's scratchpad (Codex's checkout wasn't modified).
+- **Clean-venv install** of `lab/requirements-lab.txt` on Windows 11 / Python 3.12.10: succeeded (exit 0). Installed: streamlit 1.67.0, PyMuPDF 1.26.5, pypdfium2 5.2.0, pdfplumber 0.11.7, pypdf 6.1.1, python-bidi 0.6.6, RapidFuzz 3.14.1, pydantic 2.12.3, pillow 12.0.0.
+- **Visual inspection** of the generated fixture PNG renders.
+- The **user's manual UI test** (LAB §7a).
+- Claude's runtime re-run of ruff/pytest/coverage and the runner probes **was interrupted at the user's request and not repeated**. Test pass/fail and coverage are therefore **unverified by Claude**.
+
+**User's manual results** (recorded as preliminary observations, not benchmark conclusions; LAB §7a): upload, all four extractors (`ok`), page rendering and raw visual comparison work in the UI. Observed: pypdfium2 has the best preliminary readability but has diacritic/order/mixed-language issues (`Data Quality` → `Quality Data`); PyMuPDF reverses Arabic-Indic numbers (`٢٠٢٥` → `٥٢٠٢`); pypdf reverses numbers and joins words; pdfplumber's character order is severely reversed. No extractor is selected.
+
+**Findings**
+
+| ID | Severity | File:line | Finding | Failure scenario | Required fix | Status |
+|---|---|---|---|---|---|---|
+| B1 | **Blocker (process)** | branch | E1-A is uncommitted: no push, no draft PR, no `CODEX_REPORT_E1-A.md` (CODEX_TASK §9 rule 4) | Work can't be reviewed or reproduced as a unit and could be lost; AC-E1.4 has no evidence | Commit, push, draft PR → planning branch, report | Open |
+| M1 | Major | `lab/core/runner.py:160-188` | `process.join()` is called before `output.get()`. Per the Python docs, a child that put data on a Queue can't exit until the data is consumed | Large multi-page outputs: join waits until `adapter_timeout_s`, then the run is reported as `timeout` and the result is lost. Not runtime-confirmed (probe interrupted); high confidence from documented behaviour | Read before join, or pass results via a file; ≥ 1 MB test | Open |
+| M2 | Major | `runner.py:32-36`; `text_pypdfium2.py:64-70`; `text_pymupdf.py:22-25`; `text_pdfplumber.py:53-62` | Timing includes the library import and overlay-block construction (pypdfium2 does it per character, quadratically) | Extractor timing comparisons are biased, especially against pypdfium2 | Time only the text-extraction call; record overlay time separately | Open |
+| M3 | Major | `runner.py:176-178, 234` | Timeout/error results are cached and replayed as `cache_hit` | A transient timeout keeps showing until a bypass, and the UI has no re-run control | Cache ok/partial only; UI re-run; show cache_hit | Open |
+| M4 | Major | `lab/fixtures/generate_fixtures.py:86-91,101` | `ar_two_column` (PyMuPDF producer) renders as one column; MuPDF ignores flex (PNG verified) | AC-E1.6 unmet for this producer; multi-column measurements would be meaningless | Two `insert_htmlbox` rects; verify PNG | Open |
+| M5 | Major | `generate_fixtures.py:52-59` | `header_footer` has no running header/footer in the margins, and is tagged `arabic_indic_digits` while its page numbers are Western (PNG verified) | AC-E1.6 unmet; header/footer noise can't be measured in E1-C | Positioned header/footer; Arabic-Indic numbers; correct tags | Open |
+| m1 | Minor | `runner.py:71-89` | Cache key lacks a lab/adapter implementation version | Stale results after an adapter code fix | Add versions to the key | Open |
+| m2 | Minor | `app/pages/3_Compare.py:40,55` | All runs are shown, including duplicates and different page sets, with no params/time/cache labels | Confusing comparison | Label and de-duplicate (sets in E1-C) | Open |
+| m3 | Minor | all adapters (`status="ok" if text`) | Whitespace-only text counts as `ok` | Image-only pages could show `ok` for some producers | `text.strip()` | Open |
+| m4 | Minor | `ingest.py:210-214, 177-190` | `get()` lacks the path-containment check; unusual PDF Info values raise a raw ValidationError | Inconsistent safety; an unfriendly error | Add the check; coerce metadata | Open |
+| m5 | Minor | `tests/lab/test_ui_pages.py:25` | The test writes into the real OS temp root | Test pollution | Use tmp settings | Open |
+| m6 | Minor (user decision) | `config/adapters.toml:59-76`, `lab.toml`, `settings.py:43`, `Home.py:24` | OpenRouter parser entries and key display remain | Conflicts with the self-hosted-only policy | Remove | Open |
+| m7 | Minor | `generate_fixtures.py:33-37` | The `headings` tag doesn't match the rendering | Tag-based breakdowns are misleading | Style the heading or drop the tag | Open |
+| m8 | Minor | `ingest.py:250-253` | Image documents are rendered without the 4,000 px cap | Very large PNGs in the viewer | Apply the cap | Open |
+
+**Design gap found (Claude's own):** the LAB §4 contracts lacked fields required by AC-E1.9/17/18. Added as optional fields in LAB §4 and the CODEX_TASK revision note. E1-A files stay valid.
+
+**Positive observations (static):**
+- Contracts match LAB §4.
+- `lab/core` has no Streamlit imports; there are no `src` imports and no network code.
+- Magic-byte detection; filename sanitization that keeps Arabic; ID-only paths with containment checks; atomic JSON writes.
+- Spawn-isolated adapters with timeouts; HTML-escaped text panes; localhost binding and telemetry off.
+- Two producers with page-1 renders; OFL Amiri font with its licence.
+- Pinned dependencies install cleanly on Windows.
+- No skip/xfail placeholders.
+
+**AC status for E1-A items:**
+
+| Item | Status |
+|---|---|
+| 1 | Verified statically (no `src/` changes in `git status`) |
+| 2 | Verified statically |
+| 3 | Partly verified (Windows / Python 3.12 only) |
+| 4 | **Unverified** (no report; re-run interrupted) |
+| 6 | **Not met** (M4, M5) |
+| 7 | Run/status part supported by the user's manual run; bench unverified |
+| 12 | Workspace part: code and tests present (static) |
+| 13 | Code and tests present (static) |
+| 14 | Non-bundle part: present, but M3 |
+| 15a | User-verified for a real PDF; the PNG and fixture uploads weren't reported |
+| 15c | Page image user-verified; the overlay not reported |
+
+**Verdict:** **E1-A is NOT approved.** The correction task is in `docs/handoff/CODEX_TASK_E1-A_CORRECTIONS.md`. **E1-B must not start.** The E1-B task will be prepared after the re-review approves E1-A. Re-review plan: read the committed diff, check the report's evidence, re-inspect the fixture PNGs, and run the test suite and M1/M2/M3 probes **only if the user agrees to Claude running them**.

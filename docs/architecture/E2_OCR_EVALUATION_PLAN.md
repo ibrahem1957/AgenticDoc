@@ -2,6 +2,12 @@
 
 **Author:** Claude · **Date:** 2026-11-16 (revised 2026-11-16 for the self-hosting requirement) · **Status:** PLANNED. Implementation starts only after E1 is complete (E1-D approved and the final E1 walkthrough done). E1's scope is unchanged by this document.
 **Self-hosting requirement (supersedes the earlier "local vs cloud" framing):** only models with downloadable weights, a usable inference implementation, and an eligible licence (Class A/A-tag; Class B only with user approval) are evaluated. **Proprietary API-only models (Gemini, GPT, Claude, Qwen API-only IDs, `mistral-ocr`) are excluded.** OpenRouter is allowed only as an optional, indicative test endpoint for eligible models. Scored results come from self-hosted inference. Policy, licence evidence and the full candidate table: [SELF_HOSTED_MODEL_SELECTION.md](SELF_HOSTED_MODEL_SELECTION.md) (SHM).
+**User decisions (2026-11-16), see SHM §5a:**
+- No server spec is assumed. Every run records measured RAM/VRAM, the actual hardware, and a reproducible deployment configuration.
+- dots.ocr and MinerU are research candidates only, with no install or run without approval.
+- Local, private or rented GPUs may be used for evaluation, but no rental cost or document transfer happens without explicit approval each time.
+- Legal approval is required before production.
+- **Qari-OCR remains the priority Arabic candidate**, publisher-confirmed Apache 2.0 (SHM §2.1a), pinned at revision `aa65b4a4`.
 **User decision (2026-11-16):** downloading and testing local OCR models is approved, even if they need a GPU. **NAMAA Qari-OCR is a mandatory candidate.** Accuracy, especially Arabic OCR accuracy, takes priority over local vs API. **No OCR solution is selected until the user has personally reviewed the comparison results.**
 
 Evidence labels as in MODEL_RESEARCH §0: [HF-API] = Hugging Face API metadata fetched 2026-11-16; [CARD] = model card statement; [VENDOR] = the authors' own benchmark claim; [ESTIMATE] = Claude's arithmetic, to be replaced by measurement; [MEASURED] = none yet.

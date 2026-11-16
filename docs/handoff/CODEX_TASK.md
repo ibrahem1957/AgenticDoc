@@ -7,6 +7,10 @@
 
 ---
 
+> **Revision 2026-11-16 (user decision, self-hosted-only policy):** everything about OpenRouter is **void for E1**: the `text.openrouter_fileparser` adapter, `core/openrouter.py`, `core/costs.py`, the carrier model, API toggle, confirmation dialog, spend guards, `openrouter_base_url`/`require_zdr`/cost settings, the `test_fileparser_adapter`/`test_costs`/`test_live_fileparser` tests, and AC-E1.15h/16. Where §1–§8 still mention them, ignore those parts. The E1 lab makes no network calls. See §9 → E1-D.
+>
+> **Revision 2026-11-16 (Claude, LAB §4 contract additions):** `RunResult` gains `raw_run_id: str | None = None` and `variant_version: str | None = None`. `MetricResult` gains `variant: str = "raw"`, `set_id: str | None = None`, `page_set_hash: str | None = None` and `gt_seeded_from_this_run: bool = False`. They are optional with defaults, so E1-A's files stay valid. They are added in E1-B (raw/cleaned linkage, AC-E1.17; seeding bias, AC-E1.9) and used in E1-C (AC-E1.18).
+
 ## User requirements this task must satisfy (confirmed 2026-11-16)
 | # | Requirement | Where specified | Verified by |
 |---|---|---|---|
@@ -16,7 +20,7 @@
 | R4 | Real-world Arabic documents: multi-column, headings, paragraphs, numerals, diacritics, different producers | LAB §4 (`page_tags`, `pdf_producer`), §11a | AC-E1.6, AC-E1.19 |
 | R5 | E2 comparison against OpenRouter vision models preserved; no winning Arabic OCR solution declared from E1 | LAB §11a, §12 | AC-E1.20 |
 | R6 | Lab independent of the production RAG pipeline | §0 below | AC-E1.1–2 |
-| R7 | No automatic uploads or paid API calls | LAB §1.2, §6 | AC-E1.10 |
+| R7 | No automatic uploads or paid API calls (since 2026-11-16: no external calls at all in E1) | LAB §1.2, §6 (superseded) | AC-E1.10 (revised) |
 | R8 | Inspect individual errors, not only summary metrics | LAB §8.2 | AC-E1.21 |
 
 ## 0. Hard constraints
@@ -142,11 +146,11 @@ Install into a fresh virtual environment, then record in the report: Python vers
 - **AC-E1 items:** 7 (the "no text layer" diagnostic); 18; 19 (capture, tagging, breakdowns, tests); 20 (E2 candidates, stored sets reusable by E2); 21.
 - **Tests:** `test_diagnostics`, `test_comparison`, `test_errors`.
 
-### E1-D — Reporting, exports, security, optional OpenRouter File Parser, final validation
-- **Build:** `core/report.py` (all exports, bundle import); `core/costs.py`; `core/openrouter.py`; `adapters/text_openrouter_fileparser.py`; API toggle, confirmation dialog, spend guards; Results & Export page; `lab/README.md`; root README section; final bench → `docs/architecture/E1_FIXTURE_BENCH.md`; full-coverage pass.
-- **AC-E1 items:** 4 (all of `lab/core`); 10; 11; 12 (exports); 14 (bundle round-trip); 15f; 15g; 15h; 16; 20 (fixed scope statement, banned-claims test).
-- **Tests:** `test_costs`, `test_fileparser_adapter`, `test_report`, `test_secrets`; optional `test_live_fileparser` (`live`).
-- **File parser is optional:** a missing `OPENROUTER_API_KEY`, or unavailable or unusable file-parser output, **must not block** validation of the offline lab. In that case: 15h and the live part of 16 are reported "not run (no key)" or "adapter disabled: <reason>", the adapter ships `enabled=false` with the reason shown in the UI, and every offline test (including the fake-transport tests for this adapter) must still pass. Claude runs the live check separately if a key becomes available.
+### E1-D — Reporting, exports, security, final validation (revised 2026-11-16: **OpenRouter PDF parser removed**)
+- **User decision (2026-11-16):** the OpenRouter file-parser adapter is **removed from E1** under the self-hosted-only policy (SELF_HOSTED_MODEL_SELECTION.md). Don't build `core/openrouter.py`, `adapters/text_openrouter_fileparser.py`, `core/costs.py`, the API toggle, the confirmation dialog or the spend guards. The E1 lab makes **no network calls at all**.
+- **Build:** `core/report.py` (all exports, bundle import); Results & Export page; `lab/README.md`; root README section; final bench → `docs/architecture/E1_FIXTURE_BENCH.md`; full-coverage pass. Remove any remaining OpenRouter entries from `adapters.toml`, `lab.toml` and `settings.py`, and the "API key configured" line on Home.
+- **AC-E1 items:** 4 (all of `lab/core`); 10 (revised: no network); 11 (revised: secrets); 12 (exports); 14 (bundle round-trip); 15f; 15g; 20 (fixed scope statement, banned-claims test). **15h and 16 are superseded** by the self-hosted-only policy and aren't required.
+- **Tests:** `test_report`, `test_secrets`, `test_no_network` (a socket guard fails the test on any outbound connection during a full fixture bench and a UI page run).
 
 ### Final manual evaluation (after E1-D, by the user with Claude)
 Implementation and checkpoint reviews use the reproducible fixtures only. **Don't wait for real Arabic PDFs.** The user uploads real Arabic documents for the final walkthrough: AC-E1.15 on real documents, and the real-document parts of AC-E1.19 (multi-column Arabic PDF, ≥ 2 producers). E1 is complete only after this walkthrough.

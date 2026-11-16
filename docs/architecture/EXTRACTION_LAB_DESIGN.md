@@ -151,6 +151,9 @@ class RunResult(BaseModel):
     error: str | None
     cache_hit: bool
     environment: dict                # python, platform, lab version
+    # added 2026-11-16 (optional, backward compatible; used from E1-B):
+    raw_run_id: str | None = None    # for a cleaned variant: the raw run it was computed from (AC-E1.17)
+    variant_version: str | None = None
 
 class GroundTruthPage(BaseModel):
     page: int; text: str
@@ -171,6 +174,10 @@ class MetricResult(BaseModel):
     bow_f1: float                    # order-insensitive word F1
     num_recall: float | None; num_precision: float | None
     ref_chars: int; hyp_chars: int
+    # added 2026-11-16 (optional, backward compatible):
+    variant: str = "raw"
+    set_id: str | None = None; page_set_hash: str | None = None   # AC-E1.18 (E1-C)
+    gt_seeded_from_this_run: bool = False                         # AC-E1.9 bias flag (E1-B)
 
 class Diagnostics(BaseModel):
     run_id: str; page: int
@@ -219,7 +226,7 @@ Adding an adapter means one module plus an `adapters.toml` entry. There are no U
 | `text.pypdfium2` | local | pypdfium2 (Apache-2.0/BSD) | `textpage.get_text_range()` | yes (per-char boxes, grouped into lines by the adapter only for the overlay) | Folds presentation forms to base letters itself; mixed order (§7) |
 | `text.pdfplumber` | local | pdfplumber / pdfminer.six (MIT) | `page.extract_text()`. Params `layout` and `x_tolerance` | yes (words) | Known RTL weaknesses; included as a contrast baseline |
 | `text.pypdf` | local | pypdf (BSD-3) | `page.extract_text()`, param `extraction_mode` ∈ {plain, layout} | no | Pure Python |
-| `text.openrouter_fileparser` | **api** | OpenRouter `file-parser` plugin | Parsed content from `annotations[].file.content[]` text parts. Engines `cloudflare-ai` (free) and `mistral-ocr` ($2 / 1k pages) | no | Off by default. The documented output is **not split per page** (§5.5). Uses a small carrier chat model; see §6. |
+| ~~`text.openrouter_fileparser`~~ **(removed 2026-11-16, self-hosted-only policy)** | **api** | OpenRouter `file-parser` plugin | Parsed content from `annotations[].file.content[]` text parts. Engines `cloudflare-ai` (free) and `mistral-ocr` ($2 / 1k pages) | no | Off by default. The documented output is **not split per page** (§5.5). Uses a small carrier chat model; see §6. |
 
 Post-processing **variants**, selectable per run and applicable to any adapter's output. Each variant is stored as its own result and computed from the stored `raw` output, so it needs no re-extraction:
 - `raw`: always produced.
@@ -243,7 +250,9 @@ Variant definitions are versioned (`variant_version`) and part of the cache key.
 ### 5.5 Page mapping for document-level outputs
 If an adapter returns only document-level text (the file-parser), the Lab first checks for explicit page delimiters in the returned parts. If it finds none, it stores the text as page `0` with `page_mapping="document_only"`. Metrics for such a run are then **document-level only**, against the concatenated verified pages. The UI labels this result "no page mapping". Text is never split heuristically into pages and then presented as exact.
 
-## 6. OpenRouter usage in the Lab
+## 6. ~~OpenRouter usage in the Lab~~ — SUPERSEDED for E1 (2026-11-16)
+**User decision:** the OpenRouter file-parser adapter (§5.2 row `text.openrouter_fileparser`, §5.5) is removed from E1 under the self-hosted-only policy. The E1 lab makes no network calls. The text below is kept for history only. Optional OpenRouter test runs of *eligible open-weight* models in E2 follow E2_OCR_EVALUATION_PLAN §3 and SELF_HOSTED_MODEL_SELECTION §1 instead.
+
 - **Key:** read from the `OPENROUTER_API_KEY` env var or `.env`. Never written to the workspace, logs, exports or the UI. The UI only shows "API key configured: yes/no".
 - **Availability check** (`costs.py`): when the user ticks an API adapter, the Lab fetches `GET /api/v1/models` (public, cached 1 h). If the configured carrier model ID isn't listed, the adapter shows as unavailable with the reason. File-parser engines can't be verified from the catalog. They are marked "unverified" until the first successful run and verified afterwards; the state is kept per workspace.
 - **Carrier model:** the file-parser needs a chat completion. The default is the cheapest suitable text model chosen in config, with an instruction to reply "OK" and `max_tokens` small. The Lab uses only the `annotations` content, not the model's answer. Codex must confirm with one live call that the annotations contain the parsed text. If they don't, the adapter ships disabled and the finding is reported.
@@ -252,6 +261,16 @@ If an adapter returns only document-level text (the file-parser), the Lab first 
 - **Spend guard:** `max_cost_per_run_usd` (default 0.50) and `max_cost_per_workspace_usd` (default 2.00) in `lab.toml`. A run whose estimate exceeds either limit is blocked.
 - **HTTP:** connect timeout 10 s, read timeout 180 s, at most 2 retries on 429/5xx with `Retry-After`. Errors are shown with status code and provider message, never with headers or the key.
 - **Usage:** read `usage` (tokens, and cost if present) from the response; otherwise estimate from `adapters.toml` prices. `cost_source` is always shown.
+
+## 7a. Preliminary user observations from the E1-A manual test (2026-11-16): **not benchmark conclusions**
+Recorded as reported by the user, for one real document (`arabic_extraction_test.pdf`, page 1) run through the E1-A lab with PyMuPDF 1.26.5, pypdfium2 5.2.0, pdfplumber 0.11.7 and pypdf 6.1.1 (these versions differ from the §7 probe):
+- All four adapters returned `ok`.
+- **pypdfium2:** best preliminary readability of the four raw outputs, but with diacritic, reading-order and mixed-language issues. `Data Quality` came out as `Quality Data` (the order of an LTR run reversed inside RTL context).
+- **PyMuPDF:** readable Arabic paragraphs, but Arabic-Indic numbers reversed in several cases (`٢٠٢٥` → `٥٢٠٢`). This matches the §7 probe, where the Segoe UI fixture showed the same reversal.
+- **pypdf:** similar number reversal, plus word-joining problems.
+- **pdfplumber:** Arabic character order severely reversed.
+- The user's conclusions, adopted as requirements: **numeric fidelity is a critical metric**; visual comparison alone can't select a production extractor; E1-B must evaluate cleaning variants **independently per extractor**.
+- Implications already covered: numeric recall/precision and the number check list (§8, §8.2), the `transpose_suspect` error category for reversed numbers and words (§8.2), per-extractor variants (§5.2). Added emphasis: the E1-B/E1-C reports show numeric metrics **first** for each extractor and variant.
 
 ## 7. Feasibility probe (run by Claude, 2026-11-16, scratch venv)
 
