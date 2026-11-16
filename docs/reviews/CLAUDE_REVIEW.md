@@ -203,3 +203,23 @@ PYTHONPATH=. python checks/review_checks.py <tmp>/probes tests/lab/data
 
 **Open:** B1, M1, M2, M3, M4, M5 (and minors m1–m9).
 **Verdict:** **E1-A NOT APPROVED.** Waiting for Codex's committed corrections and `CODEX_REPORT_E1-A.md`. Re-review: `verify.sh <review worktree of origin/phase-e1-extraction-lab> corrected_r1`, PNG inspection, diff and report reading. **E1-B not started; it requires explicit user approval after E1-A is approved.**
+
+## Entry 9 — Policy clarification: open models with API-first evaluation (2026-11-16)
+- **User clarification:** the model must be downloadable, self-hostable and suitably licensed, but **it doesn't have to run locally during evaluation**. OpenRouter and Hugging Face are restored as **evaluation providers** (not production dependencies). This supersedes "only self-hosted runs count in rankings". API-only proprietary models stay excluded. Production stays fully self-hosted.
+- **Verified facts (2026-11-16, public endpoints, no cost):**
+  - The OpenRouter catalog maps eligible models to HF repos via `hugging_face_id` (e.g. `qwen/qwen3-vl-8b-instruct` → `Qwen/Qwen3-VL-8B-Instruct`, `google/gemma-4-31b-it` → `google/gemma-4-31B-it`).
+  - `/models/{id}/endpoints` exposes the serving provider and quantization (Qwen3-VL-8B: Parasail, bf16). No HF commit revision is exposed.
+  - HF Inference Providers serve Qwen3-VL-8B (featherless-ai live, novita error) and Qwen3-Embedding-8B (deepinfra, scaleway).
+  - **No hosted provider** for Qari-OCR, PaddleOCR-VL 1.6 or Nuqta, so they stay local/approved-GPU candidates.
+- **Changes:**
+  - SHM: new §1a (10 rules: eligibility first, provider preference, ranking with `inference_source`, identity/provider/quantization verification, cross-source ΔCER check, latency/cost labelling, approvals, document handling, production unchanged, configurability). Rule 4 and §6.3 replaced.
+  - E2P: header, §3 rewritten as per-candidate evaluation sources, metrics rows for inference source, latency and cost.
+  - AC-E2: 18 replaced (eligible sources); new 18a (hosted identity), 18b (latency/cost/hardware labelling), 18c (approvals/data); 19 allows labelled spec estimates when there is no local run; 10 and 16 adjusted.
+  - TD §0.1 evaluation profile and §0.3 approval gate; change log.
+  - IMPLEMENTATION_PLAN E2 row, E2-C, E4R, policy bullets; stale E1 lines fixed.
+  - LAB §12.
+- **Unchanged:**
+  - E1 scope and the E1-A correction round (Codex not interrupted). The OpenRouter PDF parser stays removed (its engines are services, not downloadable models).
+  - All Arabic OCR, multimodal, RAG and temporary-session requirements.
+  - Qari-OCR, PaddleOCR-VL and Qwen VLMs stay candidates.
+  - Legal sign-off before production, and approval for paid calls, large downloads and GPU rental.

@@ -24,7 +24,7 @@ All AI calls go through `src/inference/` (built in E5). No other module talks to
 - **Model registry** `config/models.yaml`, with one entry per deployable model: `role`, `backend`, `base_url`, `served_model_name`, `hf_repo`, `hf_revision`, `weights_sha256`, `licence_class` (+ evidence link), `hardware_profile`, `prompt_profile`, optional `openrouter_alias`. **No production default is set until the user approves one** (§0.3). Until then, the app refuses to start a role that has no approved model.
 - **Deployment profiles:**
   - `production`: `allow_external_inference=false` is enforced in the client. Every request host must be on `internal_inference_hosts` (allow-list), otherwise it fails before sending. The check also runs at startup. No API keys are required.
-  - `evaluation`: external endpoints allowed only for registry models of Class A/A-tag whose `openrouter_alias` is set, behind explicit user action (Lab confirmation flow).
+  - `evaluation`: hosted **evaluation providers** (OpenRouter, Hugging Face Inference Providers via its OpenAI-compatible router) are allowed only for registry models of Class A/A-tag (Class B with approval) whose `openrouter_alias` / `hf_inference_provider` is set and identity-verified (SHM §1a). Paid calls and real documents need explicit user approval. Each call records `inference_source`, provider and quantization.
 - **Reliability:** the timeouts, retries, typed errors and usage ledger from §11 apply to every backend. Usage records tokens, latency and, for local backends, GPU time instead of $ cost.
 - **Packaging:** Docker Compose (and optionally Kubernetes manifests) for `app`, `vllm` (one service per model or multi-LoRA), `llama-cpp` (CPU fallback), `tei`, and `paddleocr`. Images and tags are pinned. Weights are mounted read-only from an internal model store. `HF_HUB_OFFLINE=1`; vLLM telemetry disabled (`VLLM_NO_USAGE_STATS=1`, `DO_NOT_TRACK=1`); egress blocked except to the inference hosts.
 
@@ -36,7 +36,7 @@ All AI calls go through `src/inference/` (built in E5). No other module talks to
 - §9 agents: the ReAct engine depends only on `ChatModel`. The prompt format must work with the selected open model (tested in the Phase 5 bake-off).
 
 ### 0.3 Model approval gate
-A model becomes a production default only when: (1) its licence class is A/A-tag, with the licence text confirmed for the pinned revision and legal sign-off recorded; (2) its scores come from self-hosted inference on the identical verified Arabic test sets; (3) **the user has personally reviewed the results and approved it**, recorded in `docs/reviews/CLAUDE_REVIEW.md` with the result set IDs.
+A model becomes a production default only when: (1) its licence class is A/A-tag, with the licence text confirmed for the pinned revision and legal sign-off recorded; (2) its scores come from an eligible inference source (hosted evaluation provider, local or private GPU, per SHM §1a) on the identical verified Arabic test sets, with a self-hosted serving recipe documented; (3) **the user has personally reviewed the results and approved it**, recorded in `docs/reviews/CLAUDE_REVIEW.md` with the result set IDs.
 
 ## 1. Goals and non-goals
 
@@ -389,5 +389,6 @@ CLI (`python -m src.main <file> [<file>...]`) uses the same services in-process.
 |---|---|---|
 | 2026-11-16 | Initial design | — |
 | 2026-11-16 | Implementation deferred; §5 and model choices become Lab hypotheses (E1–E4), finalized in E5 | User requested evaluation-first strategy |
+| 2026-11-16 | **Clarification:** OpenRouter and HF Inference Providers are restored as *evaluation providers* for eligible open-weight models, and hosted results count in rankings. Production stays fully self-hosted. API-only models stay excluded | User clarification; SHM §1a |
 | 2026-11-16 | **Self-hosting requirement:** new §0 (inference gateway, provider adapters, model registry, production egress enforcement, approval gate); OpenRouter demoted to an evaluation-only test endpoint for eligible open-weight models; proprietary API models excluded | User requirement; SELF_HOSTED_MODEL_SELECTION.md |
 | 2026-11-16 | §5.2/§5.3 caveat: "native" pages are not exact by default. The page classifier must use E1-measured signals (presentation forms, ligatures, digit forms, reversal), and the "no reversal heuristics" rule in §5.3 is re-decided in E5 from E1 data | Feasibility probe, EXTRACTION_LAB_DESIGN §7 |

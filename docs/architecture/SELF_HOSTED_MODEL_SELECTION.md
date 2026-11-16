@@ -1,6 +1,7 @@
 # AgenticDoc — Self-Hosted Model Policy & Candidate Comparison
 
 **Author:** Claude · **Date:** 2026-11-16 · **Status:** Mandatory policy (user requirement). **This supersedes the OpenRouter-first model selection** in MODEL_RESEARCH §1, §4–§9 and TECHNICAL_DESIGN §11.
+**Clarification (2026-11-16):** the model must be downloadable, self-hostable and suitably licensed, but **it does not have to run locally during evaluation**. OpenRouter and Hugging Face are permitted *evaluation providers* (§1a), never production dependencies.
 **Requirement:** every AI model evaluated for potential production use must have publicly downloadable weights and a usable inference implementation, and be self-hostable on a private company server. The production system must be able to run entirely inside company infrastructure without sending documents to external AI services. **No model becomes the production default until the user has personally inspected and approved the comparison results.**
 
 **Evidence and method.** Licence fields, gating, parameter counts and licence-file presence come from the Hugging Face API (`/api/models/{id}`), fetched 2026-11-16 for ~75 repositories. Licence texts and model cards were read where they carry the actual terms. **Nothing was downloaded.** RAM/VRAM numbers are [ESTIMATE]: bf16 weights ≈ params × 2 bytes, plus activations/KV cache. They must be replaced by measurements in the E-phases. **This is a technical licence screening, not legal advice:** the company's legal team must sign off before any model goes into production.
@@ -20,7 +21,28 @@ Additional rules:
 1. **Open weights ≠ open source** (user rule 4). The tag is a claim, not the licence. Derived models inherit obligations from their base, so the whole chain is checked (e.g. a fine-tune tagged Apache-2.0 on a restrictively licensed base is not Class A).
 2. **Pin a revision.** A licence verdict applies to a specific commit. A re-check is required when moving to a new revision.
 3. **Residual risks outside this screening:** training-data provenance, export-control and sector rules, and acceptable-use clauses. These are for legal review.
-4. **OpenRouter** may serve as an *optional test endpoint* only for Class A/A-tag models, only in the evaluation profile, and only with explicit user action. **Final scores must come from self-hosted inference of the same weights** (local or approved private/rented GPU). OpenRouter's provider, quantization and preprocessing are not under our control, so OpenRouter scores are labelled "indicative".
+4. ~~OpenRouter only as an indicative test endpoint; final scores only from self-hosted inference.~~ **Superseded 2026-11-16 by the user's clarification, see §1a.** Hosted and local evaluations are both eligible when the exact model meets the downloadable/self-hostable/licensing requirements.
+
+## 1a. Evaluation providers (user clarification, 2026-11-16)
+**Principle:** the *model* must be downloadable, self-hostable and suitably licensed (classes in §1). The *evaluation* does not have to run locally. Production stays fully self-hosted (TD §0).
+
+| # | Rule |
+|---|---|
+| 1 | **Eligibility first.** Only Class A/A-tag models (Class B with user approval). **API availability is never evidence** that a model is open, downloadable or self-hostable. API-only proprietary models stay excluded (§3). |
+| 2 | **Provider preference for evaluation:** (a) **OpenRouter** or **Hugging Face Inference Providers** when the *exact* eligible model is served; (b) otherwise **local** inference when hardware and dependencies permit; (c) otherwise an approved private/rented GPU (SHM §5a.4). |
+| 3 | **Ranking:** results from OpenRouter, Hugging Face or local inference are **all eligible for ranking**, as long as the model identity is verified (rule 4). Every result records its `inference_source` ∈ {`openrouter`, `huggingface`, `local`, `private_gpu`}, and reports show it next to every score. |
+| 4 | **Identity and settings verification per hosted run:** (i) the provider's model must map to the registry's HF repo. OpenRouter exposes `hugging_face_id` (e.g. `qwen/qwen3-vl-8b-instruct` → `Qwen/Qwen3-VL-8B-Instruct`, verified 2026-11-16); HF Inference uses the repo ID directly. (ii) Record the **serving provider** and **quantization/precision** from OpenRouter's `/models/{id}/endpoints` (e.g. Parasail, bf16) or the HF provider mapping. (iii) **Pin the provider** for a comparison set (OpenRouter `provider.order` + `allow_fallbacks: false`), so one set isn't served by mixed backends. (iv) Hosted APIs don't expose the HF commit. Record `revision: provider-unspecified` + the run date, and flag the result if the HF repo changed afterwards. (v) Record decoding settings, image size limits and any provider-side image resizing. |
+| 5 | **Cross-source consistency (when feasible):** if a hosted and a local run of the same model are both available, compare them on a shared sample. A CER difference > 0.02 is flagged as a possible provider modification (quantization or preprocessing), and both numbers are reported. |
+| 6 | **Latency, cost and hardware:** hosted latency and cost are reported but labelled **"hosted — not indicative of self-hosted performance."** Self-hosted hardware needs come from model specifications and local measurements where available (§5, §5a.2). They are never inferred from API latency. |
+| 7 | **Approvals:** no paid API call, no large weight download, and no GPU rental without explicit user approval (per run or per budget). Free hosted endpoints still count as external transfer. |
+| 8 | **Documents sent to hosted providers:** synthetic fixtures by default. Real or company documents only with explicit user approval per document set, with OpenRouter `provider.data_collection: "deny"` (and `zdr` where available). Third-party retention is documented separately from local deletion. |
+| 9 | **Production:** unchanged. The approved model runs on company infrastructure through the inference gateway (TD §0), with no external inference service. Hosted providers are **evaluation providers only**, never production dependencies. |
+| 10 | **Configurability:** model weights (repo + revision), serving backend, base URL and provider are configuration. The same registry entry can point to OpenRouter/HF during evaluation and to an internal vLLM/llama.cpp/TEI server in production. |
+
+**Hosted availability snapshot (2026-11-16):**
+- **OpenRouter** serves the eligible Qwen3-VL (8B / 30B-A3B / 235B), Qwen3.5/3.6, Qwen3-32B / 30B-A3B, Gemma 4, Mistral Small 3.2, gpt-oss, GLM-4.6V, Qwen3-Embedding 4B/8B, bge-m3, multilingual-e5-large and Qwen3-Reranker 0.6B/8B.
+- **HF Inference Providers:** Qwen3-VL-8B (featherless-ai: live; novita: error) and Qwen3-Embedding-8B (deepinfra, scaleway).
+- **Not hosted anywhere checked:** Qari-OCR (all versions), PaddleOCR-VL 1.6, Nuqta. These require local or approved-GPU evaluation.
 
 ## 2. Candidate comparison
 
@@ -176,7 +198,7 @@ Image names, tags and CUDA versions are verified and pinned at implementation ti
 ## 6. Evaluation rules under the self-hosting policy
 1. Only Class A / A-tag candidates by default; Class B only with explicit user approval per model.
 2. All candidates are scored on the **identical verified Arabic test documents** (E1 ComparisonSets) with byte-identical inputs.
-3. **Scored runs use self-hosted inference** of pinned weights: the laptop, or an approved private/rented GPU running the same open weights. OpenRouter runs of eligible models are optional, use non-sensitive documents (fixtures) by default, and are labelled "indicative".
+3. **Scored runs may use any eligible evaluation provider** (§1a): OpenRouter, Hugging Face Inference Providers, local inference, or an approved private/rented GPU. Each result records its `inference_source`, provider, quantization and settings. Hosted runs use fixtures by default (§1a rule 8).
 4. Per candidate, the report includes: exact ID + revision, download source, licence class + evidence, hardware profile used, measured peak RAM/VRAM, latency, accuracy metrics (per E2/Phase 4/Phase 5 criteria), and coverage.
 5. **No production default** until the user has reviewed and approved the results (decision recorded in CLAUDE_REVIEW).
 

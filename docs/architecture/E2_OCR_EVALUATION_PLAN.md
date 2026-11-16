@@ -1,14 +1,14 @@
 # E2 — Arabic OCR Evaluation Plan: Self-Hosted Open Models
 
 **Author:** Claude · **Date:** 2026-11-16 (revised 2026-11-16 for the self-hosting requirement) · **Status:** PLANNED. Implementation starts only after E1 is complete (E1-D approved and the final E1 walkthrough done). E1's scope is unchanged by this document.
-**Self-hosting requirement (supersedes the earlier "local vs cloud" framing):** only models with downloadable weights, a usable inference implementation, and an eligible licence (Class A/A-tag; Class B only with user approval) are evaluated. **Proprietary API-only models (Gemini, GPT, Claude, Qwen API-only IDs, `mistral-ocr`) are excluded.** OpenRouter is allowed only as an optional, indicative test endpoint for eligible models. Scored results come from self-hosted inference. Policy, licence evidence and the full candidate table: [SELF_HOSTED_MODEL_SELECTION.md](SELF_HOSTED_MODEL_SELECTION.md) (SHM).
+**Self-hosting requirement (supersedes the earlier "local vs cloud" framing):** only models with downloadable weights, a usable inference implementation, and an eligible licence (Class A/A-tag; Class B only with user approval) are evaluated. **Proprietary API-only models (Gemini, GPT, Claude, Qwen API-only IDs, `mistral-ocr`) are excluded.** **Clarification 2026-11-16 (SHM §1a):** eligible models may be evaluated through OpenRouter or Hugging Face Inference Providers (preferred when the exact model is served), or locally. Hosted and local results are both eligible for ranking, with the inference source recorded. The models must still be downloadable and self-hostable for production. Policy, licence evidence and the full candidate table: [SELF_HOSTED_MODEL_SELECTION.md](SELF_HOSTED_MODEL_SELECTION.md) (SHM).
 **User decisions (2026-11-16), see SHM §5a:**
 - No server spec is assumed. Every run records measured RAM/VRAM, the actual hardware, and a reproducible deployment configuration.
 - dots.ocr and MinerU are research candidates only, with no install or run without approval.
 - Local, private or rented GPUs may be used for evaluation, but no rental cost or document transfer happens without explicit approval each time.
 - Legal approval is required before production.
 - **Qari-OCR remains the priority Arabic candidate**, publisher-confirmed Apache 2.0 (SHM §2.1a), pinned at revision `aa65b4a4`.
-**User decision (2026-11-16):** downloading and testing local OCR models is approved, even if they need a GPU. **NAMAA Qari-OCR is a mandatory candidate.** Accuracy, especially Arabic OCR accuracy, takes priority over local vs API. **No OCR solution is selected until the user has personally reviewed the comparison results.**
+**User decision (2026-11-16):** downloading and testing local OCR models is approved, even if they need a GPU (large downloads still need approval per model, SHM §1a rule 7). **NAMAA Qari-OCR is a mandatory candidate.** Accuracy, especially Arabic OCR accuracy, takes priority over local vs API. **No OCR solution is selected until the user has personally reviewed the comparison results.**
 
 Evidence labels as in MODEL_RESEARCH §0: [HF-API] = Hugging Face API metadata fetched 2026-11-16; [CARD] = model card statement; [VENDOR] = the authors' own benchmark claim; [ESTIMATE] = Claude's arithmetic, to be replaced by measurement; [MEASURED] = none yet.
 
@@ -46,7 +46,7 @@ Evidence labels as in MODEL_RESEARCH §0: [HF-API] = Hugging Face API metadata f
 | **Nuqta-Arabic-OCR 4B** (`SalahALHaismawi/Nuqta-Arabic-OCR-4B`) | Arabic OCR fine-tune of Qwen3.5-4B; text/Markdown with HTML tables, reading order | Apache-2.0 | 9.75 GB; **official GGUF** Q4_K_M 2.9 GB / Q8_0 4.8 GB + mmproj 0.67 GB | [VENDOR] KITAB-Bench CER 0.106 (0.113 excluding 234 test images also present in training data); Misraj-DocOCR CER 0.121 / WER 0.246; GGUF Q4 ≈ bf16 CER; "~2.5 min per 2.4 MP page on laptop CPU, 8 threads" | **Include** (strongest published Arabic numbers; CPU-feasible) |
 | Nuqta-Arabic-OCR 0.8B (+ official GGUF) | Small variant | Apache-2.0 | — | No CER published | Include as low-cost variant |
 | dots.ocr (`dots-studio/dots.ocr`) | Multilingual document parser (layout JSON with bboxes, reading order, HTML tables) | **Class B**: custom "dots.ocr LICENSE AGREEMENT" on top of MIT (PRC law, termination on prohibited use; SHM §2.1) | 3B; GGUF by `ggml-org` | [VENDOR-3rd] Misraj-DocOCR CER 0.40 (from Nuqta's card); no Arabic metric from its authors | **Only with user approval** (Class B). Then: GGUF path if it runs, otherwise GPU-only, documented |
-| Larger general VLMs: `Qwen/Qwen3.8-27B` (Apache-2.0, LICENSE present), `Qwen/Qwen3-VL-30B-A3B-Instruct`, `Qwen/Qwen3-VL-32B-Instruct`, `google/gemma-4-31b-it` (Apache-2.0 tag), `mistralai/Mistral-Small-3.2-24B-Instruct-2506`, `openbmb/MiniCPM-V-4_5`, `OpenGVLab/InternVL3_5-8B` | General VLM OCR; also Stage-2 visual analysis candidates (E4) | Class A / A-tag | 8.5–33B (17–67 GB bf16) | No Arabic OCR numbers | **GPU only** (P1/P2 profiles, SHM §5). Self-hosted on an approved GPU. An OpenRouter run (where available) is indicative only |
+| Larger general VLMs: `Qwen/Qwen3.8-27B` (Apache-2.0, LICENSE present), `Qwen/Qwen3-VL-30B-A3B-Instruct`, `Qwen/Qwen3-VL-32B-Instruct`, `google/gemma-4-31b-it` (Apache-2.0 tag), `mistralai/Mistral-Small-3.2-24B-Instruct-2506`, `openbmb/MiniCPM-V-4_5`, `OpenGVLab/InternVL3_5-8B` | General VLM OCR; also Stage-2 visual analysis candidates (E4) | Class A / A-tag | 8.5–33B (17–67 GB bf16) | No Arabic OCR numbers | **Hosted first:** OpenRouter serves Qwen3-VL-30B-A3B, Gemma-4-31B and Mistral Small 3.2 (and Qwen3-VL-8B/235B). Others run locally (GPU only, P1/P2 profiles, SHM §5) or on an approved GPU |
 | AIN-7B (`MBZUAI/AIN`) | Arabic-English LMM (Qwen2-VL base) | MIT | 8.29B params (33 GB F32 files) | [VENDOR] KITAB-Bench CER 0.20 (via Nuqta's card); OCR & doc understanding 72.35 on its own benchmark | **GPU-only** here (bf16 ≈ 16.6 GB exceeds RAM) [ESTIMATE] → cloud-GPU path or documented blocker |
 | DeepSeek-OCR (`deepseek-ai/DeepSeek-OCR`) | Multilingual OCR | MIT | 3.34B | No Arabic metric found | GPU-only per card (CUDA + flash-attn). Optional on cloud GPU |
 | Tesseract 5 (`ara` traineddata) | Traditional OCR baseline | Apache-2.0 | small | KITAB-Bench CER 0.54 [PUBLISHED] | **Include as floor baseline** (CPU, cheap) |
@@ -63,13 +63,30 @@ Evidence labels as in MODEL_RESEARCH §0: [HF-API] = Hugging Face API metadata f
 | MinerU2.5 | AGPL-3.0 (Class B): only with user approval |
 | Qwen2.5-VL-3B / 72B | `qwen-research` (non-commercial) / custom `qwen` licence (Class C) |
 
-## 3. OpenRouter as an optional test endpoint (eligible models only)
+## 3. Evaluation providers (revised 2026-11-16, SHM §1a)
 
-OpenRouter is **not** a candidate source. It may serve an eligible open-weight model for a quick, **indicative** comparison before self-hosting it: `qwen/qwen3-vl-8b-instruct`, `qwen/qwen3-vl-30b-a3b-instruct`, `qwen/qwen3-vl-235b-a22b-instruct`, `qwen/qwen3.5-27b`, `qwen/qwen3.6-27b`, `google/gemma-4-31b-it`, `mistralai/mistral-small-3.2-24b-instruct`, `z-ai/glm-4.6v` (all in the 2026-11-16 catalog). Rules:
-- The OpenRouter ID is mapped to the HF repo + revision in the model registry. If the mapping is uncertain, the run is not counted at all.
-- Fixtures and non-sensitive documents only by default; real company documents only with the user's explicit per-run approval.
-- Results are labelled **"indicative (third-party serving)"** and excluded from ranking. Ranking uses self-hosted runs of the same weights.
-- Useful for upper-bound models too large for the available hardware (e.g. Qwen3-VL-235B). This shows what capacity would buy, before the company sizes hardware.
+Eligibility comes from the **model** (downloadable, self-hostable, licence). It is never inferred from API availability. For each eligible candidate, the inference source is chosen in this order:
+
+| Candidate | Hosted availability (2026-11-16) | Evaluation source |
+|---|---|---|
+| Qari-OCR 0.4.0 / v0.3 / 0.2.2.1 | **None** (no OpenRouter model; no HF Inference Provider) | **Local** (CPU for v0.3 and a validated GGUF; GPU or an approved private GPU for the 0.4.0 reference and 0.2.2.1) |
+| PaddleOCR-VL 1.6, PP-OCRv5 Arabic | None | **Local** (CPU feasible) |
+| Nuqta 4B / 0.8B | None | **Local** (official GGUF, CPU) |
+| Qwen3-VL-8B | OpenRouter (Parasail, bf16); HF Inference (featherless-ai) | **Hosted** (OpenRouter preferred, provider pinned) |
+| Qwen3-VL-30B-A3B, Qwen3-VL-235B, Qwen3.5/3.6-27B, Gemma-4-31B, Mistral Small 3.2, GLM-4.6V | OpenRouter | **Hosted** |
+| Qwen3-VL-4B (Qari 0.4's base, for measuring the fine-tune's gain) | Not checked as hosted | Local/approved GPU, or hosted if found |
+| Qwen3.8-27B, MiniCPM-V 4.5, InternVL3.5-8B, AIN, DeepSeek-OCR | Not in the OpenRouter catalog (re-check at kickoff) | Local or approved GPU, or a documented blocker |
+| Tesseract | n/a | Local |
+
+Rules (SHM §1a):
+- Verify identity via OpenRouter's `hugging_face_id` (or the HF repo ID).
+- Pin the provider (`provider.order` + `allow_fallbacks: false`), and record provider + quantization.
+- Record `revision: provider-unspecified` and the run date for hosted runs.
+- Send **byte-identical page images** to every source, and record any provider-side size limits or resizing.
+- Use fixtures by default. Real documents only with approval.
+- No paid call without approval.
+- Run a cross-source consistency check when both hosted and local runs exist (flag ΔCER > 0.02).
+- Hosted latency and cost are labelled as not indicative of self-hosted performance.
 
 ## 4. CPU/GPU feasibility assessment and execution paths
 
@@ -116,9 +133,10 @@ OpenRouter is **not** a candidate source. It may serve an eligible open-weight m
 | Arabic reading order | GT gives the page as ordered lines/blocks. Output lines are matched to GT lines by best normalized-edit-distance alignment (threshold 0.5). **Kendall τ** over matched order, plus the share of GT lines matched | Verified text with line order (GT editor marks line breaks; ordered blocks for multi-column pages) |
 | Numeric accuracy | E1 numeric recall/precision (exact, digit form preserved), plus a value-equivalent recall (same value, any digit script), reported separately | Verified |
 | Table-text accuracy | CER and numeric recall restricted to text inside GT table regions. Table *structure* is E3 | GT with table regions marked (simple text-region marking in the GT editor) |
-| Latency | Per page, wall time from image in to text out, **excluding model load**. Model load/warm-up reported separately. Median and p90 over ≥ 3 runs on ≥ 10 pages | — |
+| Latency | Per page, wall time from image in to text out, **excluding model load**. Model load/warm-up reported separately. Median and p90 over ≥ 3 runs on ≥ 10 pages. **Reported per `inference_source`.** Hosted latency is labelled "not indicative of self-hosted performance" and never compared directly with local latency | — |
+| Inference source | `openrouter` / `huggingface` / `local` / `private_gpu`, plus provider name, quantization/precision, revision (or `provider-unspecified` + date) and settings | — |
 | Peak RAM / VRAM | Worker process peak RSS (psutil sampling at 100 ms plus OS peak working set); VRAM via `torch.cuda.max_memory_allocated` or `nvidia-smi` sampling on GPU paths; "n/a (CPU)" otherwise | — |
-| Cost | API: actual usage / cost from responses (`cost_source`). Cloud GPU: instance $/h × measured time. Local: $0 with hardware stated; energy not measured | — |
+| Cost | Hosted API: actual usage / cost from responses (`cost_source`), with **no paid call without approval**. Cloud GPU: instance $/h × measured time (with approval). Local: $0 with hardware stated; energy not measured. Hosted cost isn't the cost of self-hosting | — |
 | Failure rate | Pages with error, timeout, empty, or runaway output (repetition loop > 2× GT length) | — |
 | Hallucination signals | Output numbers absent from GT (numeric precision); inserted text spans (E1 error inspection) | Verified |
 
