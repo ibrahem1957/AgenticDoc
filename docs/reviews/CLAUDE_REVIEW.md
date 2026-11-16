@@ -58,3 +58,9 @@ Independent reviews of Codex's work. Each entry states whether verification was 
 | R8 | Only a colour diff, no individual error list | `ErrorItem` alignment, categories, number check list, Errors page, `errors.csv` (LAB §8.2, AC-E1.21) |
 
 - **Status:** CODEX_TASK remains **DRAFT** at the user's request.
+
+## Entry 3 — E1 issued with conditions (2026-11-16)
+- **User decision:** E1 approved. Codex branches from `planning/multimodal-rag`; nothing is merged into `main`. Implementation proceeds in checkpoints E1-A (foundation, upload, rendering, local extractors), E1-B (raw/cleaned, ground truth, metrics), E1-C (errors, diagnostics, comparison sets) and E1-D (reporting, exports, security, optional file parser, final validation). All 21 AC-E1 items are preserved. The file parser stays optional. Fixtures come first; real Arabic documents are used in the final manual evaluation. Library versions are verified during implementation. PyMuPDF production licensing stays unresolved until E5.
+- **Changes made:** CODEX_TASK status DRAFT → ISSUED; new branch base; §9 checkpoints with AC mapping, per-checkpoint rules and reports (`CODEX_REPORT_E1-<X>.md`); AC-E1 preamble clarifications.
+- **Open findings carried forward:** P1 (fixture bias, needs real documents in the final evaluation), P2 (file-parser shape, live check in E1-D or by Claude), P7 (PyMuPDF licence, E5).
+- **Next:** independent review of checkpoint E1-A once Codex pushes it and `CODEX_REPORT_E1-A.md` exists. E1-B must not start before an approval entry here.

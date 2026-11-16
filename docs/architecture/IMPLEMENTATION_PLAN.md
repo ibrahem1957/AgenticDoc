@@ -9,7 +9,7 @@ The user wants to test extraction tools and models on their own documents before
 
 | Phase | Name | Status | Gate |
 |---|---|---|---|
-| **E1** | **Extraction Lab + text extraction evaluation** (native PDF text layers) | **Next — task issued** | AC-E1 |
+| **E1** | **Extraction Lab + text extraction evaluation** (native PDF text layers), in checkpoints E1-A → E1-D, each independently reviewed | **Issued 2026-11-16 — E1-A first** | AC-E1 (all 21 items) |
 | E2 | Arabic OCR model comparison (VLMs via OpenRouter, `mistral-ocr`, optional local NAMAA Qari-OCR / PaddleOCR-VL) | Planned | AC-E2 (defined at E2 kickoff) |
 | E3 | Table extraction evaluation | Planned | AC-E3 |
 | E4 | Chart understanding evaluation | Planned | AC-E4 |

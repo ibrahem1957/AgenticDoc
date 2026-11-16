@@ -30,6 +30,10 @@ The phase order is E1 → E5, then Phases 3–6 (IMPLEMENTATION_PLAN §0). **AC-
 
 Verification: Claude re-runs every command and walks through the UI checklist (item 15) personally. "Offline" means with network disabled or `OPENROUTER_API_KEY` unset.
 
+**Checkpoints (user decision, 2026-11-16):** E1 is implemented in checkpoints E1-A … E1-D (CODEX_TASK §9), each reviewed by Claude before the next starts. **All 21 items below stay mandatory for E1 completion.** The checkpoint mapping only sets when each item is verified. Two clarifications, neither of which removes an item:
+- **Optional file parser:** a missing API key or unusable file-parser output does not block acceptance of the offline lab. Item 15h and the live part of item 16 are then satisfied by the documented fallback: adapter `enabled=false` with the reason shown, all offline tests passing, and the status recorded as "not run (no key)". Claude runs the live check when a key is available.
+- **Real Arabic documents:** checkpoints are reviewed on reproducible fixtures. The real-document parts of items 15 and 19 are verified in the final manual evaluation with documents the user uploads. E1 is complete only after that evaluation.
+
 **Isolation and existing app**
 1. `git diff main -- "Project sdaia/src"` is empty. `python -m src.main` behaves as before (no new imports, no new required dependencies in the main app).
 2. `lab.core` contains no `streamlit` import (`grep -rn "import streamlit\|from streamlit" "Project sdaia/lab/core"` → no matches). `src` contains no `lab` import.

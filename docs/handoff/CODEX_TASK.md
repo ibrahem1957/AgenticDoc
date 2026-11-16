@@ -1,7 +1,7 @@
 # CODEX TASK — Phase E1: Extraction Lab + Text Extraction Evaluation
 
-**Issued by:** Claude (architect/reviewer) · **Date:** 2026-11-16 · **Status:** DRAFT — awaiting user review before implementation
-**Branch:** `phase-e1-extraction-lab` from `main`
+**Issued by:** Claude (architect/reviewer) · **Date:** 2026-11-16 · **Status:** ISSUED 2026-11-16 (approved by the user with conditions, see §9). Implement **one checkpoint at a time**, starting with E1-A.
+**Branch:** create `phase-e1-extraction-lab` from **`planning/multimodal-rag`** (not from `main`). **Never merge into `main`**, and never merge any branch yourself.
 **Design (authoritative):** `docs/architecture/EXTRACTION_LAB_DESIGN.md` (LAB). **Acceptance:** `docs/architecture/ACCEPTANCE_CRITERIA.md` → **AC-E1** (items 1–21).
 **Context:** `docs/architecture/IMPLEMENTATION_PLAN.md` §0 (strategy), `MODEL_RESEARCH.md` (candidates, NAMAA findings — relevant from E2).
 
@@ -102,17 +102,54 @@ ruff check lab tests/lab
 pytest tests/lab --cov=lab.core --cov-report=term-missing
 python -m lab.fixtures.generate_fixtures
 python -m lab.core.bench --fixtures lab/fixtures/generated --out lab_exports/e1_fixture_bench   # headless: runs all local adapters × variants on all fixtures, writes the report
-git diff main --stat -- src            # must be empty
+git diff planning/multimodal-rag --stat -- src   # must be empty
 python -m src.main                     # only if a key is available; otherwise "not run"
 pytest tests/lab -m live               # only if a key is available; otherwise "not run"
 ```
 `lab/core/bench.py` is a small headless CLI that reuses runner + metrics + report, so the fixture results in AC-E1 item 7 are reproducible without the UI. **Include the generated `report.md` from the fixture bench in the PR** (as `docs/architecture/E1_FIXTURE_BENCH.md`). It is evidence for review, not a verdict.
 
 ## 8. Deliverables
-1. Code + tests as above, on branch `phase-e1-extraction-lab`, in a PR to `main` (do not merge).
-2. `docs/handoff/CODEX_REPORT.md` filled in from the template: every AC-E1 item with evidence; design deviations; facts verified on the implementation day (carrier model ID and price, file-parser response shape, library versions installed); anything not run and why.
+1. Code + tests as above, on branch `phase-e1-extraction-lab`, pushed to `origin`. After E1-A, open a **draft** PR `phase-e1-extraction-lab → planning/multimodal-rag` and keep it updated per checkpoint. Do not merge it, and never target `main`.
+2. One report per checkpoint: `docs/handoff/CODEX_REPORT_E1-A.md` … `CODEX_REPORT_E1-D.md`, copied from the `CODEX_REPORT.md` template (leave the template unchanged). Each includes every AC-E1 item assigned to that checkpoint with evidence, the design deviations, the facts verified that day (library versions installed; from E1-D, the carrier model ID and price and the file-parser response shape), and anything not run and why.
 3. `docs/architecture/E1_FIXTURE_BENCH.md` (generated).
 4. `lab/README.md`: install, run, data handling (temporary workspace, what leaves the machine and when), cost warning, how to add an adapter.
 
-## 9. Explicitly out of scope
+## 9. Checkpoints (implementation milestones, **not** a reduction of scope)
+All 21 AC-E1 items remain mandatory for E1 completion. Checkpoints only set the order of work and the review gates.
+
+### Rules for every checkpoint
+1. Work only on that checkpoint's scope. Don't start the next one until Claude records approval in `docs/reviews/CLAUDE_REVIEW.md` and the user relays it.
+2. At the end of the checkpoint: `ruff check lab tests/lab` clean; `pytest tests/lab` green offline. **No `skip`/`xfail` that hides unimplemented work**: tests for later checkpoints simply don't exist yet. Coverage ≥ 85% on the `lab/core` modules created so far. `git diff planning/multimodal-rag --stat -- "Project sdaia/src"` is empty.
+3. Leave the lab runnable: `streamlit run lab/app/Home.py` starts, and pages for later checkpoints show "available in E1-X".
+4. Commit with clear messages, push the branch, and write `docs/handoff/CODEX_REPORT_E1-<X>.md`. Report **actual** changes, verbatim command output summaries, failures, and limitations. State what you did not verify. Don't claim AC items that belong to later checkpoints.
+5. Stop and wait for review.
+
+### Library verification (all checkpoints, starting in E1-A)
+Install into a fresh virtual environment, then record in the report: Python version, OS, and the exact installed version of every package in `requirements-lab.txt` (`pip freeze` excerpt). Confirm each API used against the installed version (e.g. pypdfium2 text-page methods, PyMuPDF `insert_htmlbox`/`get_text` options, pdfplumber `extract_text` params, pypdf `extraction_mode`, Streamlit APIs used), and note any incompatibility. **PyMuPDF licensing stays unresolved until the production-selection phase (E5).** Don't treat its use in the Lab as a production decision, and don't add licence-driven workarounds.
+
+### E1-A — Lab foundation, upload, PDF rendering, local text extractors
+- **Build:** `requirements-lab.txt`, `.streamlit/config.toml`, `.gitignore` additions; `config/lab.toml`, `config/adapters.toml` (local adapters + the file-parser entry with `enabled=false`); `core/settings.py`; `core/models.py` (**all** LAB §4 contracts defined now, so later checkpoints don't change them); `core/workspace.py`; `core/ingest.py` (including the PDF producer/creator capture and the page-tag storage API); `core/adapters/{base,registry}.py`; the 4 local text adapters; `core/runner.py` (child processes, timeouts, timing, cache, re-run, repeat ×N); `fixtures/generate_fixtures.py` + font + licence; `tests/lab/data/` tiny PDFs; a minimal UI with Home (workspace), Documents (upload, list, delete, page viewer, producer display), Run (select adapters/pages, run, progress) and Compare **raw only** (page image beside one column per run, block-order overlay); `core/bench.py` producing run results and timing only (metrics come in E1-B).
+- **AC-E1 items verified at E1-A:** 1, 2, 3; 4 (for modules built so far); 6; 7 (runs and statuses for every fixture; metrics part in E1-B); 12 (workspace end, TTL, path safety; the export part in E1-D); 13; 14 (versions, params, sha256, environment, cache hit, re-run; the bundle part in E1-D); 15a; 15c (page image + overlay; diff in E1-B).
+- **Tests:** `test_models`, `test_workspace`, `test_ingest`, `test_adapters_local`, `test_runner`, `test_no_src_changes`.
+
+### E1-B — Raw/cleaned comparison, ground truth, accuracy metrics
+- **Build:** `core/adapters/postprocess.py` (4 variants, versioned, computed from stored raw); `core/groundtruth.py`; `core/metrics.py`; `core/review.py`; UI: RAW/CLEANED panes, word diff vs GT and vs another run, Ground Truth page (editor, seed, verify, import/export of GT JSON/txt), human-review form; bench adds metrics.
+- **AC-E1 items:** 5; 7 (metrics part); 8; 9; 15b; 15c (diff); 15d; 15e; 17.
+- **Tests:** `test_postprocess` (incl. the probe regression case), `test_raw_vs_cleaned`, `test_groundtruth`, `test_metrics`.
+
+### E1-C — Error inspection, diagnostics, comparison sets
+- **Build:** `core/diagnostics.py`; `core/comparison.py` (sets, frozen GT versions, staleness, `IncomparableRunsError`, tag/producer breakdowns, E2 candidates); `core/errors.py`; UI: comparison-set header on Compare/Errors/Results, Errors page, page-tag editor, diagnostics badges.
+- **AC-E1 items:** 7 (the "no text layer" diagnostic); 18; 19 (capture, tagging, breakdowns, tests); 20 (E2 candidates, stored sets reusable by E2); 21.
+- **Tests:** `test_diagnostics`, `test_comparison`, `test_errors`.
+
+### E1-D — Reporting, exports, security, optional OpenRouter File Parser, final validation
+- **Build:** `core/report.py` (all exports, bundle import); `core/costs.py`; `core/openrouter.py`; `adapters/text_openrouter_fileparser.py`; API toggle, confirmation dialog, spend guards; Results & Export page; `lab/README.md`; root README section; final bench → `docs/architecture/E1_FIXTURE_BENCH.md`; full-coverage pass.
+- **AC-E1 items:** 4 (all of `lab/core`); 10; 11; 12 (exports); 14 (bundle round-trip); 15f; 15g; 15h; 16; 20 (fixed scope statement, banned-claims test).
+- **Tests:** `test_costs`, `test_fileparser_adapter`, `test_report`, `test_secrets`; optional `test_live_fileparser` (`live`).
+- **File parser is optional:** a missing `OPENROUTER_API_KEY`, or unavailable or unusable file-parser output, **must not block** validation of the offline lab. In that case: 15h and the live part of 16 are reported "not run (no key)" or "adapter disabled: <reason>", the adapter ships `enabled=false` with the reason shown in the UI, and every offline test (including the fake-transport tests for this adapter) must still pass. Claude runs the live check separately if a key becomes available.
+
+### Final manual evaluation (after E1-D, by the user with Claude)
+Implementation and checkpoint reviews use the reproducible fixtures only. **Don't wait for real Arabic PDFs.** The user uploads real Arabic documents for the final walkthrough: AC-E1.15 on real documents, and the real-document parts of AC-E1.19 (multi-column Arabic PDF, ≥ 2 producers). E1 is complete only after this walkthrough.
+
+## 10. Explicitly out of scope
 Declaring any extractor, OCR solution or pipeline the winner (LAB §11a); structure scoring (heading/paragraph detection); OCR/VLM adapters, NAMAA/Paddle local models, table/chart tasks, Docling, pymupdf4llm, any FastAPI or `src/` change, authentication, multi-user deployment, production frontend, RAG, embeddings.
