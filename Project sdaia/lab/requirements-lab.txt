@@ -1,0 +1,13 @@
+streamlit==1.67.0
+pymupdf==1.26.5
+pypdfium2==5.2.0
+pdfplumber==0.11.7
+pypdf==6.1.1
+python-bidi==0.6.6
+rapidfuzz==3.14.1
+pydantic==2.12.3
+pillow==12.0.0
+pytest==8.4.2
+pytest-cov==7.0.0
+ruff==0.14.3
+

@@ -147,3 +147,7 @@ The system can be useful for:
 The goal of this project is not only to build a document assistant, but also to explore the internal architecture behind modern **Agentic AI and RAG systems** by implementing the core components from scratch.
 
 Rather than hiding agent behavior behind existing frameworks, the project provides direct control over the agent loop, tools, retrieval pipeline, observability, and reliability mechanisms.
+
+## Extraction Lab (evaluation only)
+
+The repository includes a separate local Streamlit Extraction Lab under `Project sdaia/lab/`. It compares native PDF text extractors without modifying the existing `src/` application. See [the Lab README](Project%20sdaia/lab/README.md) for Windows PowerShell setup, launch instructions, temporary-data handling, and the required manual PDF walkthrough.

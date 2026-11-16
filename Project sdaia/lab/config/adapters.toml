@@ -1,0 +1,58 @@
+[[adapters]]
+id = "text.pymupdf"
+task = "text"
+label = "PyMuPDF"
+kind = "local"
+module = "lab.core.adapters.text_pymupdf"
+library = "pymupdf"
+license = "AGPL-3.0"
+enabled = true
+preselected = true
+supports_blocks = true
+[adapters.params]
+sort = false
+
+[[adapters]]
+id = "text.pypdfium2"
+task = "text"
+label = "pypdfium2"
+kind = "local"
+module = "lab.core.adapters.text_pypdfium2"
+library = "pypdfium2"
+license = "Apache-2.0/BSD-3-Clause"
+enabled = true
+preselected = true
+supports_blocks = true
+[adapters.params]
+line_tolerance = 3.0
+
+[[adapters]]
+id = "text.pdfplumber"
+task = "text"
+label = "pdfplumber"
+kind = "local"
+module = "lab.core.adapters.text_pdfplumber"
+library = "pdfplumber"
+license = "MIT"
+enabled = true
+preselected = true
+supports_blocks = true
+[adapters.params]
+layout = false
+x_tolerance = 3.0
+line_tolerance = 3.0
+
+[[adapters]]
+id = "text.pypdf"
+task = "text"
+label = "pypdf"
+kind = "local"
+module = "lab.core.adapters.text_pypdf"
+library = "pypdf"
+license = "BSD-3-Clause"
+enabled = true
+preselected = true
+supports_blocks = false
+[adapters.params]
+mode = "plain"
+
