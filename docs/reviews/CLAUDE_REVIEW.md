@@ -223,3 +223,43 @@ PYTHONPATH=. python checks/review_checks.py <tmp>/probes tests/lab/data
   - All Arabic OCR, multimodal, RAG and temporary-session requirements.
   - Qari-OCR, PaddleOCR-VL and Qwen VLMs stay candidates.
   - Legal sign-off before production, and approval for paid calls, large downloads and GPU rental.
+
+## Entry 10 — E1-A takeover and completion by Claude: **SELF-REVIEW** (2026-11-16) — verdict: **NEEDS USER VERIFICATION**
+> **Role change (user instruction):** Codex hit its usage limit. Claude took over *implementation* of E1-A, continuing from Codex's staged work. **This entry is a self-review by the implementer, not an independent review.** It does not approve E1-A. Approval is the user's decision.
+
+**Preservation:** Codex's staged state was backed up before any change: `refs/backup/e1a-codex-wip-2026-11-16` → `7cf8d17` (local ref), plus a scratchpad tar. Nothing was reset, discarded or force-pushed.
+
+**Delivered:**
+- `phase-e1-extraction-lab` pushed to origin: implementation `3095b33956b3b7ca9c4817739f15146dd41328e2`, report `979031f9ddfceee33ae29ab945127cf5aa9a8677` (`docs/handoff/CODEX_REPORT_E1-A.md`).
+- **Draft PR not created:** `gh` is logged in as `ialtowalah`, which isn't a collaborator (`must be a collaborator`). The user should open it at <https://github.com/ibrahem1957/AgenticDoc/compare/planning/multimodal-rag...phase-e1-extraction-lab?expand=1> as a **draft**.
+
+**What Claude found in Codex's work and changed:**
+- **M2 (incomplete):** Codex's timers started after page / text-page loading and summed per-page times only. That excluded document open and pdfium's parsing, which reversed the bias rather than removing it. Fixed: extraction = `run()` minus overlay; timers include loading; adapter versions bumped. Two new regression tests.
+- **N1 (new, security/privacy):** launched as documented, Streamlit **bound all interfaces** and made an **external IP lookup**, because `lab/.streamlit/config.toml` isn't read from `Project sdaia/`. This was missed by every prior check, including Claude's Entry 7/8 static review. Fixed with `python -m lab.launch` (forced `127.0.0.1`, usage stats off, overrides rejected) plus tests and a README change. Runtime-verified: localhost listener only, LAN refused, 0 non-loopback connections.
+- **N2:** bench coverage test added.
+
+**Verification (Claude, real tree, Windows 11 / Python 3.12.10 / clean venv):**
+
+| Check | Result |
+|---|---|
+| Ruff | pass |
+| pytest | **52 passed**, 0 failed, 0 skipped |
+| Coverage `lab.core` | **93%** (runner 82%: the subprocess body isn't measured) |
+| Fixtures | exit 0. **Visual:** two-column (both producers, right column first), header/footer (margins, `— ١ —`), heading, numerals: correct, no overflow |
+| Bench | 64 runs, all ok |
+| Probes | M1/M2a/M3 PASS |
+| Deep path | test with a ≥ 170-char root passes |
+| `src/` | unchanged |
+| Network | no network code; runtime 0 external connections |
+
+**E1-A acceptance items (self-assessed):**
+- 1, 2, 3 (Windows/3.12 only), 4, 6, 7, 12 (workspace part), 13, 14 (non-bundle part), 15c (image + overlay in code/AppTest): met.
+- **15a and the interactive parts of 15c:** NEEDS USER VERIFICATION on the corrected build. No browser automation was available. The user's earlier walkthrough covered the pre-correction build.
+
+**Outstanding:**
+1. The user's interactive walkthrough with `python -m lab.launch` (upload → preview → four extractors → RAW Arabic comparison → re-run with bypass).
+2. Opening the draft PR (permissions).
+3. Python 3.11/3.13 and Linux unverified.
+4. An independent review of Claude's own changes (`runner.py`, the four adapters, `launch.py`, the new tests) is recommended, by the user or by Codex when available, since self-review can miss the implementer's own mistakes.
+
+**Verdict:** **NEEDS USER VERIFICATION.** All blocking and major findings (B1 except PR creation, M1–M5) and m1–m9 are resolved, with tests and runtime evidence. **E1-A isn't approved, and E1-B isn't started.** Both require explicit user approval.
