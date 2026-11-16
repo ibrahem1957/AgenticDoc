@@ -97,7 +97,7 @@ Sources: [namaa.space](https://www.namaa.space/) (JavaScript shell; the HTML con
 
 | Asset | 1. What it does | 2. Arabic | 3. Modalities | 4. Public | 5. Maintained | 6. API | 7. Local | 8. Useful for AgenticDoc? | 9. Evidence |
 |---|---|---|---|---|---|---|---|---|---|
-| **Qari-OCR-0.4.0-VL-4B** | Arabic OCR VLM (Qwen3-VL-4B fine-tune) | Arabic-only; optimized for printed Islamic texts; "may vary on modern fonts" | Image → text | Yes, Apache-2.0 | Updated 2026-02-01 | **None** (card: "isn't deployed by any Inference Provider") | Yes, GPU | **Optional local OCR adapter (Phase 3+)**; strongest NAMAA asset. Domain mismatch risk for modern business/academic docs. | [VENDOR] CER 0.1222 / WER 0.2562; test set unnamed |
+| **Qari-OCR-0.4.0-VL-4B** | Arabic OCR LoRA adapter on Qwen3-VL-4B-Instruct (4.44B params) | Arabic-only; optimized for printed Islamic texts; "may vary on modern fonts" | Image → text | Yes, Apache-2.0 | Updated 2026-02-01 | **None** (card: "isn't deployed by any Inference Provider") | Yes; GPU recommended (bf16 ≈ 8.9 GB) | **MANDATORY E2 candidate (user decision 2026-11-16)**, together with v0.3 and 0.2.2.1. See E2_OCR_EVALUATION_PLAN. Domain mismatch risk for modern business/academic docs. | [VENDOR] CER 0.1222 / WER 0.2562, test set unnamed; contradicted by a third-party claim (QARI CER 0.64 on Misraj-DocOCR, Nuqta card) |
 | **Qari-OCR-v0.3-VL-2B** | Arabic OCR with HTML/Markdown structure | Diacritics, 12 fonts, low-res | Image → structured text | Yes, Apache-2.0 | 2025-06 | None | Yes, GPU (smaller) | Candidate local adapter; v0.2 better on raw text per its own card | [VENDOR] CER 0.300 / WER 0.485 |
 | Qari-OCR-0.2.2.1 / 0.1 | Earlier Qari versions | Arabic | Image → text | Yes | 2025 | None | Yes | Superseded | [VENDOR] |
 | **GATE-Reranker-V1** | Arabic cross-encoder reranker (AraBERT base, 0.1B) | Arabic only | Text | Yes, Apache-2.0 | 2025-04 | None | Yes, CPU-feasible | **Not default.** 512-token limit, Arabic-only (we need AR↔EN), numbers only in unreadable plot images, comparison models unnamed. Possible eval candidate. | [VENDOR] |
@@ -212,6 +212,13 @@ Decision rule (from the project brief): correctness and grounding first, then Ar
 - **We do not assume zero retention.** The backend sends `data_collection: "deny"` by default, and `zdr: true` when `AGENTICDOC_REQUIRE_ZDR=true`. Some models may have no ZDR endpoint; the request then fails, and the error must be explicit.
 - Local session deletion **cannot** delete data already sent to a provider. This is stated in API docs and the README.
 
+## 10a. Local Arabic OCR update (2026-11-16)
+The user approved downloading and testing local OCR models, including GPU-only ones. Qari-OCR is mandatory, and accuracy outranks local vs API. The candidate set, licences, sizes, CPU/GPU feasibility on the evaluation laptop (i7-1255U, 15.7 GB RAM, **no NVIDIA GPU**), execution paths, download safety and metrics are in **[E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md)**. Summary:
+- **Mandatory local:** Qari-OCR 0.4.0, v0.3 and 0.2.2.1 (NAMAA); PaddleOCR-VL 1.6 (official GGUF + PaddleOCR pipeline).
+- **Added:** Nuqta-Arabic-OCR 4B/0.8B, Apache-2.0, official GGUF. It has the strongest published Arabic numbers ([VENDOR] KITAB-Bench CER 0.106), and its card notes training overlap with KITAB-Bench test images. Also dots.ocr (MIT), AIN-7B (MIT, GPU-only here), DeepSeek-OCR (MIT, CUDA-only), and Tesseract as the floor baseline.
+- **Not publicly available:** Baseer / Baseer v2 (HTTP 401).
+- §9's "local adapters optional later" for OCR is **superseded**: local candidates are first-class in E2.
+
 ## 11. Sources
 - OpenRouter models API: https://openrouter.ai/api/v1/models (snapshot 2026-11-16)
 - OpenRouter PDF processing: https://openrouter.ai/docs/features/multimodal/pdfs
@@ -226,6 +233,13 @@ Decision rule (from the project brief): correctness and grounding first, then Ar
 - GATE-Reranker-V1: https://huggingface.co/NAMAA-Space/GATE-Reranker-V1
 - Ara-Prompt-Guard V1: https://huggingface.co/NAMAA-Space/Ara-Prompt-Guard_V1
 - Qari-0.1-eval: https://huggingface.co/datasets/NAMAA-Space/Qari-0.1-eval
+- Qari-OCR 0.2.2.1: https://huggingface.co/NAMAA-Space/Qari-OCR-0.2.2.1-VL-2B-Instruct
+- Nuqta-Arabic-OCR 4B / GGUF: https://huggingface.co/SalahALHaismawi/Nuqta-Arabic-OCR-4B · https://huggingface.co/SalahALHaismawi/Nuqta-Arabic-OCR-4B-GGUF
+- PaddleOCR-VL 1.6 / GGUF: https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6 · https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6-GGUF
+- dots.ocr: https://huggingface.co/dots-studio/dots.ocr
+- AIN: https://huggingface.co/MBZUAI/AIN
+- DeepSeek-OCR: https://huggingface.co/deepseek-ai/DeepSeek-OCR
+- Qwen3-VL-4B-Instruct (Qari 0.4 base): https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct
 - Nuqta-Arabic-OCR-4B: https://huggingface.co/SalahALHaismawi/Nuqta-Arabic-OCR-4B
 - Baseer: https://arxiv.org/abs/2509.18174
 - PaddleOCR-VL: https://arxiv.org/html/2510.14528v3 · https://www.paddleocr.ai/latest/en/version3.x/algorithm/PaddleOCR-VL/PaddleOCR-VL.html

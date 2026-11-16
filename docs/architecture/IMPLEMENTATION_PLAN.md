@@ -10,7 +10,7 @@ The user wants to test extraction tools and models on their own documents before
 | Phase | Name | Status | Gate |
 |---|---|---|---|
 | **E1** | **Extraction Lab + text extraction evaluation** (native PDF text layers), in checkpoints E1-A → E1-D, each independently reviewed | **Issued 2026-11-16 — E1-A first** | AC-E1 (all 21 items) |
-| E2 | Arabic OCR model comparison (VLMs via OpenRouter, `mistral-ocr`, optional local NAMAA Qari-OCR / PaddleOCR-VL) | Planned | AC-E2 (defined at E2 kickoff) |
+| E2 | Arabic OCR comparison, **local vs cloud**: mandatory local NAMAA Qari-OCR (0.4.0, v0.3, 0.2.2.1) and PaddleOCR-VL 1.6, plus Nuqta, dots.ocr, AIN, DeepSeek-OCR and Tesseract; cloud Gemini/Qwen/others via OpenRouter and `mistral-ocr`. Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) | Planned (after E1) | AC-E2 (draft defined; finalized at kickoff) |
 | E3 | Table extraction evaluation | Planned | AC-E3 |
 | E4 | Chart understanding evaluation | Planned | AC-E4 |
 | E5 | Select and integrate the validated extraction pipeline into AgenticDoc | Planned; absorbs Phases 1–2 below | AC-E5 |
@@ -30,7 +30,12 @@ Consequences:
 - **Risks:** synthetic fixtures produced by PyMuPDF may favour PyMuPDF's extractor (mitigation: real user documents, and fixtures from a second producer where possible, see LAB §7); Streamlit statefulness bugs (mitigation: all logic in `lab.core`, tested without Streamlit).
 
 ### E2–E4 (outline; detailed tasks issued after the previous phase is approved)
-- **E2:** add the `ocr` task: page-image renders at configurable DPI and degradation variants; VLM adapters with model IDs from config validated against `/api/v1/models` (shortlist in MODEL_RESEARCH §4); `mistral-ocr`; optional local adapters (Qari-OCR 0.4, PaddleOCR-VL) that disable themselves without their dependencies or a GPU; scanned fixtures produced by rasterizing E1 fixtures; the user's scanned documents.
+- **E2 (revised 2026-11-16; mandatory local-vs-cloud evaluation):** add the `ocr` task, reusing E1 ComparisonSets and verified GT unchanged. Planned checkpoints:
+  - **E2-A — Model manager & local runtimes:** licence/size/revision pre-download review with explicit per-model user approval; `LAB_MODELS_DIR` outside Git; `models.lock.json` hashes; pinned llama.cpp binaries; separate venvs for torch and paddle; worker protocol (local HTTP/stdio); peak RAM/VRAM sampling; a hardware report.
+  - **E2-B — Local adapters:** Qari 0.4.0 (cloud-GPU reference via the official adapter + self-built, validated GGUF for local CPU), Qari v0.3, Qari 0.2.2.1, PaddleOCR-VL 1.6 (GGUF and the PaddleOCR pipeline), Nuqta 4B/0.8B, dots.ocr, Tesseract; AIN and DeepSeek-OCR via cloud GPU or a documented blocker.
+  - **E2-C — Cloud adapters:** OpenRouter VLMs (Gemini, Qwen, others; model IDs validated against `/api/v1/models`, upper-bound tiers included) and `mistral-ocr`, behind E1's confirmation and spend guards.
+  - **E2-D — Metrics & comparison:** reading-order Kendall τ (line-annotated GT), table-text accuracy (region-marked GT), value-equivalent numeric recall, latency, resources, cost, coverage, contamination flags; the E2 comparison view; `E2_OCR_RESULTS.md`; Claude's non-binding analysis; **the user's personal review and decision before any selection**.
+  - A local candidate that is infeasible on the laptop (no NVIDIA GPU) is run on an approved cloud GPU, or listed with its blocker. It is never silently dropped.
 - **E3:** add the `table` task: cell-grid ground-truth editor, cell EM / numeric cell EM / TEDS; adapters PyMuPDF `find_tables`, pdfplumber, best E2 VLMs, optionally Docling.
 - **E4:** add the `chart` task: data-point ground truth with `printed`/`estimated` flags; printed-value EM, abstention rate, hallucinated-value rate; VLM adapters.
 - **E5:** write `MODEL_EVAL_RESULTS.md` from the Lab exports, update TD §5 and MODEL_RESEARCH §9 with measured choices, then implement the foundation (former Phase 1) and the validated extraction (former Phase 2/3 extraction parts) in `src/`.

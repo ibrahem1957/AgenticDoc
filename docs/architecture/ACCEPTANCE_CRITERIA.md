@@ -75,6 +75,36 @@ Verification: Claude re-runs every command and walks through the UI checklist (i
 20. **E2 preserved, no OCR verdict (R5):** `report.md` contains the fixed scope statement (LAB §11a) verbatim. A test fails if any report contains "winner", "best OCR" or "recommended pipeline". E2 candidate pages are listed. ComparisonSets and verified GT are stored so E2 adapters can be scored against them unchanged (round-trip test on the stored set).
 21. **Individual error inspection (R8):** for verified pages, `ErrorItem`s are produced with op, spans, ±30-char context, offsets and categories. Hand-built tests cover letter substitution, missing diacritic, `digit_form` (`٢٠٢٥`→`۲۰۲٥`), `transpose_suspect` (`٢٠٢٥`→`٥٢٠٢`), a reversed word and inserted Latin text. The number check list reports found / missing / altered / extra. In the UI walkthrough, the Errors page filters by category and highlights the selected span in both texts, and `errors.csv` is exported.
 
+## AC-E2 — Arabic OCR: local vs cloud (DRAFT, defined 2026-11-16; finalized at E2 kickoff; may be tightened, not loosened)
+Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) (E2P). E2 starts only after E1 is complete. E1 files and behaviour stay valid (additive schema changes only).
+
+**Candidates and feasibility**
+1. **Mandatory candidates are evaluated, or explicitly blocked with evidence:** Qari-OCR 0.4.0, Qari-OCR v0.3, Qari-OCR 0.2.2.1, PaddleOCR-VL 1.6, and at least two OpenRouter Gemini models and two Qwen models (one upper-bound tier per family), plus `mistral-ocr`. "Blocked" requires: the attempted path, the exact error or resource limit, the alternatives tried (E2P §4), and the user's decision on any cloud-GPU alternative.
+2. Additional candidates in E2P §2.2 are attempted where feasible; each one is reported as evaluated, blocked (with reason), or excluded (with reason). No candidate disappears from the report.
+3. A hardware report (CPU, RAM, GPU/VRAM, OS, runtime versions) is attached to every result set. A CPU/GPU feasibility table with **measured** peak memory replaces the E2P §4 estimates.
+4. **Qari 0.4.0 fidelity:** a reference run of the official adapter + base (bf16) exists for ≥ 10 pages. Any converted or quantized variant (e.g. self-built GGUF) is scored as "Qari 0.4.0" only if its CER is within ±0.01 of the reference on those pages; otherwise it is reported under its own label.
+
+**Download and supply-chain safety**
+
+5. Before each download, the licence (HF API + LICENSE file), pinned revision, size, dependencies and hardware path are recorded, and the user approves explicitly. No test or CI job downloads models.
+6. Weights live only under `LAB_MODELS_DIR` (outside the repo). `.gitignore` covers weight formats. A test asserts no tracked file > 10 MB under `Project sdaia/lab/`. `models.lock.json` holds the sha256 of every model file and runtime binary.
+7. `trust_remote_code` is used only at pinned revisions whose remote Python files are listed in the report and reviewed by Claude. Heavy runtimes are isolated in separate venvs or binaries, and E1's environment is unchanged.
+8. No user document, page image or OCR output of user documents is committed. Cloud-GPU runs upload only the pages the user confirmed, and the run checklist includes deleting the instance and its storage.
+
+**Identical inputs and metrics**
+
+9. All candidates are scored inside the same E1 ComparisonSets against the same frozen, verified GT, from **byte-identical page images** (sha256 recorded). Candidate-specific preprocessing is a separately labelled variant.
+10. Metrics per candidate and set: CER, WER, CER-no-diacritics, Arabic reading order (Kendall τ + matched-line share on line-annotated GT), numeric exact recall/precision and value-equivalent recall, table-text CER and numeric recall (region-marked GT), latency (model load separate; median and p90; ≥ 3 runs on ≥ 10 pages for local paths), peak RAM and VRAM (measured; "n/a" only for CPU-only VRAM), cost (API actual with `cost_source`; cloud-GPU $/h × time; local $0 + hardware), failure rate, coverage.
+11. Metric implementations for reading order, table-text and value-equivalent numbers have hand-computed unit tests, including a two-column RTL page with swapped columns and a table with Arabic-Indic numbers.
+12. Contaminated test sets (KITAB-Bench for Nuqta; Qari's datasets for Qari) are flagged, reported separately, and excluded from ranking.
+13. Fairness: documented prompts/settings per candidate plus one common VLM prompt, reported separately; greedy/temperature 0; settings versioned in results.
+14. E1 error inspection (individual errors, categories, number check list) works for every E2 candidate (UI walkthrough).
+
+**Decision**
+
+15. `E2_OCR_RESULTS.md` (aggregates only, no document text) and the Lab comparison view exist. Claude's analysis is labelled non-binding.
+16. **No OCR solution is selected before the user's personal review.** The decision is recorded as a user decision entry in `docs/reviews/CLAUDE_REVIEW.md`, with the result set IDs it is based on. Accuracy, especially Arabic OCR accuracy, is the primary criterion. Local vs API is secondary.
+
 ## AC-1 — Backend foundation (deferred to E5)
 1. `pip install -e ".[dev]"` (or `pip install -r requirements-dev.txt`) succeeds on Python 3.11–3.13 from `Project sdaia/`.
 2. `pytest -m "not live"` passes with **no network access**; coverage of `src/llm`, `src/sessions`, `src/documents` ≥ 85%.

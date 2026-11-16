@@ -64,3 +64,14 @@ Independent reviews of Codex's work. Each entry states whether verification was 
 - **Changes made:** CODEX_TASK status DRAFT → ISSUED; new branch base; §9 checkpoints with AC mapping, per-checkpoint rules and reports (`CODEX_REPORT_E1-<X>.md`); AC-E1 preamble clarifications.
 - **Open findings carried forward:** P1 (fixture bias, needs real documents in the final evaluation), P2 (file-parser shape, live check in E1-D or by Claude), P7 (PyMuPDF licence, E5).
 - **Next:** independent review of checkpoint E1-A once Codex pushes it and `CODEX_REPORT_E1-A.md` exists. E1-B must not start before an approval entry here.
+
+## Entry 4 — Mandatory local Arabic OCR evaluation added to E2 (2026-11-16)
+- **User decision:** local OCR model downloads and tests are approved, even if they need a GPU. Qari-OCR (NAMAA) is mandatory. Local models are compared with OpenRouter vision models on identical documents and verified GT. Accuracy outranks local vs API. No OCR selection before the user's personal review. E1 scope unchanged; Codex not interrupted.
+- **Research performed (no downloads):** HF API metadata and model cards for Qari 0.4.0 / v0.3 / 0.2.2.1, PaddleOCR-VL (1.6 current, official GGUF), Nuqta 4B/0.8B (official GGUF), dots.ocr, AIN, DeepSeek-OCR, olmOCR, Baseer (not public), Surya (gated); hardware check of the evaluation laptop.
+- **Key findings:**
+  - No NVIDIA GPU (Iris Xe, 15.7 GB RAM), so CUDA-only paths are blocked locally.
+  - Qari 0.4.0 is a LoRA adapter on Qwen3-VL-4B (4.44B params; fp32 ≈ 17.8 GB > RAM). It needs a cloud-GPU reference run, or a self-built GGUF validated against that reference.
+  - Qari 0.2.2.1 targets a bitsandbytes-4bit base, which needs CUDA.
+  - Vendor claims conflict (Qari's own CER 0.122 vs Nuqta's card reporting QARI CER 0.64), so neither claim is used for decisions.
+- **Changes:** new `E2_OCR_EVALUATION_PLAN.md`; AC-E2 draft (16 items); E2 checkpoints E2-A … E2-D in IMPLEMENTATION_PLAN; MODEL_RESEARCH §3 and §10a; LAB §12. `CODEX_TASK.md` (E1) **not modified**.
+- **Open for the user before E2 starts:** (a) whether cloud-GPU runs (Kaggle/Colab/paid instance) are acceptable for blocked candidates, and which documents may be uploaded there; (b) the E2 API/cloud-GPU budget; (c) `LAB_MODELS_DIR` location (default `D:\agenticdoc-models`, about 50–70 GB expected if all locally runnable candidates, their official GGUFs and our own Qari conversions are downloaded; AIN's 33 GB of F32 files is excluded because it isn't runnable locally [ESTIMATE]).
