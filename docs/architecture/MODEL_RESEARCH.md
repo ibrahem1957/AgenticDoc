@@ -1,5 +1,7 @@
 # AgenticDoc — Model Research, Arabic OCR Evaluation & Technology Selection
 
+> **SUPERSEDED IN PART (2026-11-16): self-hosting requirement.** Every model considered for production must be downloadable, self-hostable and eligibly licensed. The OpenRouter-first recommendations in §1 and §4–§9 (Gemini, GPT, Claude, `mistral-ocr`, `openai/text-embedding-3-small`, Cohere/Voyage rerankers, API-only Qwen IDs) are **void**. The authoritative candidate list, licence screening and exclusions are in **[SELF_HOSTED_MODEL_SELECTION.md](SELF_HOSTED_MODEL_SELECTION.md)**. Still valid here: the Arabic OCR evidence (§2), NAMAA findings (§3), the E1 probe correction (§2.5), and the evaluation method. The catalog prices below now matter only for optional OpenRouter test runs of eligible models.
+
 **Author:** Claude · **Date:** 2026-11-16
 **Catalog snapshot:** OpenRouter `GET /api/v1/models` (469 models), `/api/v1/embeddings/models`, `?output_modalities=rerank`, fetched 2026-11-16. Prices below are copied from that snapshot and **will drift**; the code must read model IDs from configuration, never hard-code them.
 

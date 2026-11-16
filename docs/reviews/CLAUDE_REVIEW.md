@@ -75,3 +75,20 @@ Independent reviews of Codex's work. Each entry states whether verification was 
   - Vendor claims conflict (Qari's own CER 0.122 vs Nuqta's card reporting QARI CER 0.64), so neither claim is used for decisions.
 - **Changes:** new `E2_OCR_EVALUATION_PLAN.md`; AC-E2 draft (16 items); E2 checkpoints E2-A … E2-D in IMPLEMENTATION_PLAN; MODEL_RESEARCH §3 and §10a; LAB §12. `CODEX_TASK.md` (E1) **not modified**.
 - **Open for the user before E2 starts:** (a) whether cloud-GPU runs (Kaggle/Colab/paid instance) are acceptable for blocked candidates, and which documents may be uploaded there; (b) the E2 API/cloud-GPU budget; (c) `LAB_MODELS_DIR` location (default `D:\agenticdoc-models`, about 50–70 GB expected if all locally runnable candidates, their official GGUFs and our own Qari conversions are downloaded; AIN's 33 GB of F32 files is excluded because it isn't runnable locally [ESTIMATE]).
+
+## Entry 5 — Self-hosted open-source models only (2026-11-16)
+- **User requirement:** every AI model evaluated for potential production use must be downloadable and self-hostable on a private company server, with a verified licence (permissive preferred). Proprietary API-only models are excluded. OpenRouter is only an optional test endpoint for otherwise eligible models. Production must be able to run fully inside company infrastructure. **User approval is required before any production default.** E1-A unchanged; Codex not interrupted.
+- **Research (no downloads, no installs):** HF API licence and metadata snapshot of ~75 repos; reading of licence files and cards where terms differ from tags (dots.ocr agreement, gpt-oss usage policy, Gemma 4, MiniCPM-V 4.5); HF search for Qwen3.7/3.8/4 weights and PaddleOCR Arabic models; OpenRouter catalog check for eligible test endpoints.
+- **Key findings:**
+  1. Licence tags are unreliable as a final answer. dots.ocr is tagged MIT but ships a custom agreement (PRC law, termination clause), so it is Class B. Many top candidates (all Qari versions, Qwen3-VL, Gemma 4, ALLaM, bge) have **no licence file** in the model repo (A-tag), so licence text must be confirmed before production.
+  2. Licences differ **within** families: Qwen3.8-27B is Apache-2.0, but Qwen3.8-Flash-Next (`qwen-community-1.0`) and Qwen3.8-2.4T (`qwen3.8-max`) are custom. Qwen2.5-VL-3B is research-only and 72B uses a custom licence. Gemma 3 uses the Gemma terms, while Gemma 4 is Apache-2.0.
+  3. Excluded on licence grounds: Llama 3.3/4, Gemma 3 and EmbeddingGemma, Jina v3/reranker v2 (CC-BY-NC), Command R7B Arabic (CC-BY-NC), Falcon-H1 (custom). Excluded as API-only: GPT/Gemini/Claude, API-only Qwen IDs (no Qwen3.7/Qwen4 weights), `mistral-ocr`, Cohere/Voyage rerank and embeddings, `openai/text-embedding-3-small`, `openai/gpt-4o-mini`.
+  4. `openai/gpt-oss-20b/120b` are Apache-2.0 open weights with a minimal usage policy: eligible, and distinct from the excluded GPT APIs.
+  5. Fanar-1-9B: the base-model chain must be checked (possible Gemma base).
+- **Changes:** new `SELF_HOSTED_MODEL_SELECTION.md`; TD §0 (inference gateway, provider adapters, model registry, production egress allow-list, approval gate) + non-goal fix + change log; MODEL_RESEARCH banner; E2 plan revised (proprietary removed; PP-OCRv5 Arabic and Qwen VLMs added; OpenRouter indicative-only); AC-E2 items 1, 16–19; deferred-AC note; AC-4.3 voided/revised; IMPLEMENTATION_PLAN (new E4R retrieval/chat evaluation, E5 gateway). **`CODEX_TASK.md` (E1) not modified. No production code changed.**
+- **Open decisions for the user:**
+  - (a) **E1-D OpenRouter file-parser adapter** (`cloudflare-ai`/`mistral-ocr`, now ineligible external services). Recommendation: **drop it from E1-D** and mark AC-E1.15h/16 "N/A by policy". Alternatively keep it as a clearly labelled non-production reference. A change to CODEX_TASK/AC-E1 needs your approval.
+  - (b) The target company server specification (GPU/VRAM/RAM/OS/Docker/air-gap).
+  - (c) Whether Class B models (dots.ocr, MinerU) may be evaluated.
+  - (d) Whether a private/rented GPU may be used for evaluation, and which documents may go there.
+  - (e) Legal contact for licence sign-off of A-tag models.

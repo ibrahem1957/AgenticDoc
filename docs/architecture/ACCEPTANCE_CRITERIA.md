@@ -75,11 +75,11 @@ Verification: Claude re-runs every command and walks through the UI checklist (i
 20. **E2 preserved, no OCR verdict (R5):** `report.md` contains the fixed scope statement (LAB §11a) verbatim. A test fails if any report contains "winner", "best OCR" or "recommended pipeline". E2 candidate pages are listed. ComparisonSets and verified GT are stored so E2 adapters can be scored against them unchanged (round-trip test on the stored set).
 21. **Individual error inspection (R8):** for verified pages, `ErrorItem`s are produced with op, spans, ±30-char context, offsets and categories. Hand-built tests cover letter substitution, missing diacritic, `digit_form` (`٢٠٢٥`→`۲۰۲٥`), `transpose_suspect` (`٢٠٢٥`→`٥٢٠٢`), a reversed word and inserted Latin text. The number check list reports found / missing / altered / extra. In the UI walkthrough, the Errors page filters by category and highlights the selected span in both texts, and `errors.csv` is exported.
 
-## AC-E2 — Arabic OCR: local vs cloud (DRAFT, defined 2026-11-16; finalized at E2 kickoff; may be tightened, not loosened)
-Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) (E2P). E2 starts only after E1 is complete. E1 files and behaviour stay valid (additive schema changes only).
+## AC-E2 — Arabic OCR: self-hosted open models (DRAFT, defined 2026-11-16, revised for the self-hosting requirement; finalized at E2 kickoff; may be tightened, not loosened)
+Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) (E2P); policy: [SELF_HOSTED_MODEL_SELECTION.md](SELF_HOSTED_MODEL_SELECTION.md) (SHM). E2 starts only after E1 is complete. E1 files and behaviour stay valid (additive schema changes only).
 
 **Candidates and feasibility**
-1. **Mandatory candidates are evaluated, or explicitly blocked with evidence:** Qari-OCR 0.4.0, Qari-OCR v0.3, Qari-OCR 0.2.2.1, PaddleOCR-VL 1.6, and at least two OpenRouter Gemini models and two Qwen models (one upper-bound tier per family), plus `mistral-ocr`. "Blocked" requires: the attempted path, the exact error or resource limit, the alternatives tried (E2P §4), and the user's decision on any cloud-GPU alternative.
+1. **Mandatory candidates are evaluated, or explicitly blocked with evidence:** Qari-OCR 0.4.0, Qari-OCR v0.3, Qari-OCR 0.2.2.1, PaddleOCR-VL 1.6, PaddleOCR PP-OCRv5 (Arabic recognizer), and at least two Qwen vision models (Qwen3-VL-4B as Qari 0.4's base, plus one larger Qwen VLM, e.g. Qwen3-VL-8B or Qwen3.8-27B). **No proprietary API-only model is evaluated.** "Blocked" requires: the attempted path, the exact error or resource limit, the alternatives tried (E2P §4), and the user's decision on any private/rented-GPU alternative.
 2. Additional candidates in E2P §2.2 are attempted where feasible; each one is reported as evaluated, blocked (with reason), or excluded (with reason). No candidate disappears from the report.
 3. A hardware report (CPU, RAM, GPU/VRAM, OS, runtime versions) is attached to every result set. A CPU/GPU feasibility table with **measured** peak memory replaces the E2P §4 estimates.
 4. **Qari 0.4.0 fidelity:** a reference run of the official adapter + base (bf16) exists for ≥ 10 pages. Any converted or quantized variant (e.g. self-built GGUF) is scored as "Qari 0.4.0" only if its CER is within ±0.01 of the reference on those pages; otherwise it is reported under its own label.
@@ -103,7 +103,16 @@ Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) (E2P). E2 starts on
 **Decision**
 
 15. `E2_OCR_RESULTS.md` (aggregates only, no document text) and the Lab comparison view exist. Claude's analysis is labelled non-binding.
-16. **No OCR solution is selected before the user's personal review.** The decision is recorded as a user decision entry in `docs/reviews/CLAUDE_REVIEW.md`, with the result set IDs it is based on. Accuracy, especially Arabic OCR accuracy, is the primary criterion. Local vs API is secondary.
+16. **No OCR solution is selected before the user's personal review.** The decision is recorded as a user decision entry in `docs/reviews/CLAUDE_REVIEW.md`, with the result set IDs it is based on. Accuracy, especially Arabic OCR accuracy, is the primary criterion among eligible (self-hostable) models.
+
+**Self-hosting requirement (added 2026-11-16)**
+
+17. **Licence gate:** every evaluated model has a recorded licence class (SHM §1) with evidence: HF tag, the licence file or official page, and the base-model chain. Class B models are evaluated only with a recorded user approval. Class C models aren't evaluated at all. A model's report row links its evidence.
+18. **Self-hosted scoring:** every ranked score comes from self-hosted inference of the pinned weights (laptop, or an approved private/rented GPU) using an open-source serving stack (vLLM, llama.cpp, PaddleOCR, transformers, TEI). OpenRouter runs, if any, are only for eligible models, are labelled "indicative", and are excluded from ranking. A test asserts that the ranking code rejects results whose `serving` field isn't self-hosted.
+19. **Reproducible private deployment:** for each candidate that is ranked, the report gives the exact model ID + revision, download source, serving command or container image + tag, hardware profile, and measured peak RAM/VRAM. This must be enough to reproduce the run on a company server without any external AI service.
+
+## Note on deferred criteria AC-1 … AC-6 (2026-11-16)
+These were written for the OpenRouter-first design and are **revised at E5** for the self-hosting requirement (TD §0). Until then: any reference to a proprietary model or to OpenRouter as the production provider is void. "OpenRouterClient" means the inference gateway. `provider.data_collection`/`zdr` apply only in the evaluation profile. A production-profile test must show that a request to a non-allow-listed host (e.g. `openrouter.ai`) is refused before sending.
 
 ## AC-1 — Backend foundation (deferred to E5)
 1. `pip install -e ".[dev]"` (or `pip install -r requirements-dev.txt`) succeeds on Python 3.11–3.13 from `Project sdaia/`.
@@ -145,7 +154,7 @@ Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) (E2P). E2 starts on
 ## AC-4 — Multi-document RAG (provisional thresholds)
 1. Chunks never span two documents; never span sections except by the merge rule; large-table chunks repeat headers.
 2. Retrieval (selected embedding default, live eval): Recall@5 ≥ **0.90** AR→AR, ≥ **0.80** cross-lingual (AR↔EN), ≥ 0.90 numeric/exact-term queries (hybrid allowed); MRR@10 reported for all.
-3. Embedding default beats or matches `openai/text-embedding-3-small` on the Arabic sets (or the reason for keeping the baseline is documented).
+3. ~~Embedding default beats or matches `openai/text-embedding-3-small`~~ (void: API-only model, self-hosting requirement). Revised: the user-approved embedding default is a self-hosted eligible model whose Recall@5 and MRR@10 are reported against every other eligible candidate evaluated in E4R on the same Arabic and cross-lingual sets.
 4. Hybrid and reranking enabled by default only if they improve Recall@5 or MRR@10 by ≥ 5 points on the Arabic + cross-lingual sets without exceeding latency p95 + 1 s.
 5. Scope: 0 out-of-scope chunks across 1,000 randomized scoped queries (property test, offline with fake embeddings); cross-session access impossible.
 6. Document removal: after deletion, 0 chunks/vectors/BM25 entries/visual cache entries/files remain for that document; other documents' results unchanged (test compares before/after).

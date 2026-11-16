@@ -10,11 +10,19 @@ The user wants to test extraction tools and models on their own documents before
 | Phase | Name | Status | Gate |
 |---|---|---|---|
 | **E1** | **Extraction Lab + text extraction evaluation** (native PDF text layers), in checkpoints E1-A → E1-D, each independently reviewed | **Issued 2026-11-16 — E1-A first** | AC-E1 (all 21 items) |
-| E2 | Arabic OCR comparison, **local vs cloud**: mandatory local NAMAA Qari-OCR (0.4.0, v0.3, 0.2.2.1) and PaddleOCR-VL 1.6, plus Nuqta, dots.ocr, AIN, DeepSeek-OCR and Tesseract; cloud Gemini/Qwen/others via OpenRouter and `mistral-ocr`. Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) | Planned (after E1) | AC-E2 (draft defined; finalized at kickoff) |
-| E3 | Table extraction evaluation | Planned | AC-E3 |
-| E4 | Chart understanding evaluation | Planned | AC-E4 |
-| E5 | Select and integrate the validated extraction pipeline into AgenticDoc | Planned; absorbs Phases 1–2 below | AC-E5 |
+| E2 | Arabic OCR comparison of **self-hostable open models only**: mandatory NAMAA Qari-OCR (0.4.0, v0.3, 0.2.2.1), PaddleOCR-VL 1.6, PaddleOCR PP-OCRv5 (Arabic) and Qwen3-VL; plus Nuqta, AIN, DeepSeek-OCR, larger open VLMs (Qwen3.8-27B, Gemma 4, …) and Tesseract; dots.ocr and MinerU only with approval (Class B). OpenRouter only as an indicative test endpoint for eligible models. Plan: [E2_OCR_EVALUATION_PLAN.md](E2_OCR_EVALUATION_PLAN.md) | Planned (after E1) | AC-E2 (draft; finalized at kickoff) |
+| E3 | Table extraction evaluation (self-hostable models only) | Planned | AC-E3 |
+| E4 | Chart understanding evaluation (self-hostable VLMs only) | Planned | AC-E4 |
+| **E4R** | **Retrieval and chatbot model evaluation (new, self-hosting requirement):** embeddings, rerankers and chat LLMs from SELF_HOSTED_MODEL_SELECTION §2.3–§2.5 on identical Arabic/English retrieval and QA sets, self-hosted inference, user review before any default | Planned (may run in parallel with E3/E4) | AC-E4R (defined at kickoff; draws on AC-4 items 2–4 and AC-5 item 3) |
+| E5 | Select (user-approved models only) and integrate the validated pipeline into AgenticDoc, including the **inference gateway** (TD §0.1) with production egress enforcement | Planned; absorbs Phases 1–2 below | AC-E5 |
 | 3–6 | Multimodal, multi-document RAG, agents, hardening (below) | **Deferred until after E5** | AC-3 … AC-6 |
+
+### Self-hosting requirement (2026-11-16) — applies to E2 onward
+- **Only downloadable, self-hostable, eligibly licensed models are evaluated** (policy and candidates: [SELF_HOSTED_MODEL_SELECTION.md](SELF_HOSTED_MODEL_SELECTION.md)). Proprietary API-only models are excluded from every phase.
+- **Production must run entirely inside company infrastructure:** the inference gateway with provider adapters (TD §0), an internal host allow-list in the production profile, and no external AI calls.
+- **Before any weight download or GPU framework install:** a licence and hardware review per model (SHM §1, E2P §5), recorded and approved by the user.
+- **Required input from the user:** the target company server specification (SHM §5). Rankings are reported per hardware profile the company can provide.
+- **E1 is unchanged** (E1-A continues). The optional OpenRouter file-parser adapter in E1-D uses external services (`cloudflare-ai`, `mistral-ocr`) that are now ineligible for production. Whether to keep it as a reference or drop it from E1-D is **an open user decision** (CLAUDE_REVIEW Entry 5). CODEX_TASK is not changed until then.
 
 Consequences:
 - **The former Phase 1 task ("Backend foundation") is withdrawn before implementation.** It is archived at `docs/handoff/archive/CODEX_TASK_phase1_foundation_SUPERSEDED.md`. Its content (OpenRouter client hardening, config, sessions, FastAPI) is reused in E5. The Lab's own small client and workspace code serve as prototypes for it.
@@ -30,21 +38,22 @@ Consequences:
 - **Risks:** synthetic fixtures produced by PyMuPDF may favour PyMuPDF's extractor (mitigation: real user documents, and fixtures from a second producer where possible, see LAB §7); Streamlit statefulness bugs (mitigation: all logic in `lab.core`, tested without Streamlit).
 
 ### E2–E4 (outline; detailed tasks issued after the previous phase is approved)
-- **E2 (revised 2026-11-16; mandatory local-vs-cloud evaluation):** add the `ocr` task, reusing E1 ComparisonSets and verified GT unchanged. Planned checkpoints:
+- **E2 (revised 2026-11-16; mandatory evaluation of self-hostable open OCR models, see SELF_HOSTED_MODEL_SELECTION):** add the `ocr` task, reusing E1 ComparisonSets and verified GT unchanged. Planned checkpoints:
   - **E2-A — Model manager & local runtimes:** licence/size/revision pre-download review with explicit per-model user approval; `LAB_MODELS_DIR` outside Git; `models.lock.json` hashes; pinned llama.cpp binaries; separate venvs for torch and paddle; worker protocol (local HTTP/stdio); peak RAM/VRAM sampling; a hardware report.
   - **E2-B — Local adapters:** Qari 0.4.0 (cloud-GPU reference via the official adapter + self-built, validated GGUF for local CPU), Qari v0.3, Qari 0.2.2.1, PaddleOCR-VL 1.6 (GGUF and the PaddleOCR pipeline), Nuqta 4B/0.8B, dots.ocr, Tesseract; AIN and DeepSeek-OCR via cloud GPU or a documented blocker.
-  - **E2-C — Cloud adapters:** OpenRouter VLMs (Gemini, Qwen, others; model IDs validated against `/api/v1/models`, upper-bound tiers included) and `mistral-ocr`, behind E1's confirmation and spend guards.
+  - **E2-C — Self-hosted GPU runs and optional indicative endpoints (revised for self-hosting):** an approved private or rented GPU runner for open-weight candidates that the laptop can't run (vLLM with pinned images/weights), plus OpenRouter test runs **only** for eligible open-weight models (E2P §3), labelled indicative and excluded from ranking. Proprietary models and `mistral-ocr` are removed.
   - **E2-D — Metrics & comparison:** reading-order Kendall τ (line-annotated GT), table-text accuracy (region-marked GT), value-equivalent numeric recall, latency, resources, cost, coverage, contamination flags; the E2 comparison view; `E2_OCR_RESULTS.md`; Claude's non-binding analysis; **the user's personal review and decision before any selection**.
   - A local candidate that is infeasible on the laptop (no NVIDIA GPU) is run on an approved cloud GPU, or listed with its blocker. It is never silently dropped.
 - **E3:** add the `table` task: cell-grid ground-truth editor, cell EM / numeric cell EM / TEDS; adapters PyMuPDF `find_tables`, pdfplumber, best E2 VLMs, optionally Docling.
 - **E4:** add the `chart` task: data-point ground truth with `printed`/`estimated` flags; printed-value EM, abstention rate, hallucinated-value rate; VLM adapters.
-- **E5:** write `MODEL_EVAL_RESULTS.md` from the Lab exports, update TD §5 and MODEL_RESEARCH §9 with measured choices, then implement the foundation (former Phase 1) and the validated extraction (former Phase 2/3 extraction parts) in `src/`.
+- **E4R (new):** a retrieval and chat bake-off of self-hosted embeddings (Qwen3-Embedding 0.6B/4B/8B, bge-m3 dense and sparse, multilingual-e5, gte, arctic-embed, GATE-AraBert), rerankers (Qwen3-Reranker, bge-reranker-v2-m3, mxbai, gte, GATE-Reranker) and chat LLMs (Qwen3/3.5/3.6/3.8, ALLaM-7B, Jais, Fanar after a base-licence check, gpt-oss, Gemma 4, Mistral Small 3.2). Uses AR→AR, AR→EN, EN→AR and grounded QA sets built from the verified E1/E2 documents. Self-hosted via TEI/vLLM/llama.cpp. Reports per hardware profile. User review before any default.
+- **E5:** write `MODEL_EVAL_RESULTS.md` from the Lab exports, record the **user-approved** models in the registry (TD §0.3), update TD §5 with measured choices, then implement the foundation (former Phase 1, with the inference gateway replacing the OpenRouter client) and the validated extraction (former Phase 2/3 extraction parts) in `src/`. Production profile: internal hosts only.
 
 ## Ground rules for every phase
 1. Work on a branch `phase-N-<slug>` from the latest approved `main`; one PR per phase (corrections go on the same branch).
 2. Do not change interfaces defined in TD without a written proposal in `CODEX_REPORT.md` → "Design deviations", approved by Claude.
 3. All model IDs, limits, TTLs from `src/config.py`. No hard-coded model strings outside config defaults.
-4. Unit tests never call the network: use the fake OpenRouter transport (Phase 1). Live tests are marked `@pytest.mark.live` and skipped without `OPENROUTER_API_KEY`.
+4. Unit tests never call the network: use a fake transport for the inference gateway (formerly "the fake OpenRouter transport"). Live tests are marked `@pytest.mark.live` and skipped without `OPENROUTER_API_KEY`.
 5. No document content in logs at INFO level.
 6. The legacy CLI (`python -m src.main`) must keep working at the end of every phase.
 7. Deliver `docs/handoff/CODEX_REPORT.md` with the exact commands run and their verbatim output summary.
@@ -138,7 +147,7 @@ Phases 3 and 4 may run in parallel after Phase 2 if two branches are coordinated
 **Tasks:**
 1. Run the OCR/table/chart bake-off (MODEL_RESEARCH §8) on the Phase 2 rasterized fixtures + licensed real data; write results; propose defaults → **Claude approves before task 2 ships defaults**.
 2. `VLMOCREngine` with JSON-schema output (TD §5.4), DPI escalation, unreadable markers, validation, retry.
-3. `MistralOCREngine` adapter (OpenRouter `file-parser` plugin, `mistral-ocr`), mapped to page elements.
+3. ~~`MistralOCREngine` adapter~~ (void, 2026-11-16: `mistral-ocr` is an external service excluded by the self-hosting requirement). Replaced by the self-hosted `OCREngine` adapters selected in E2 (TD §0.1).
 4. `mixed` pages: OCR of large text-bearing images, attached to the image element.
 5. Stage 1 `describe.py` (TD §5.5) with per-document budget, batching, skip rules.
 6. Stage 2 `analyze.py` + `cache.py` (TD §7): full-extraction prompt, value_source flags, per-key locking, persistence, deletion hooks.

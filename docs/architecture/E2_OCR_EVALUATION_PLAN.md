@@ -1,6 +1,7 @@
-# E2 — Arabic OCR Evaluation Plan: Local vs Cloud
+# E2 — Arabic OCR Evaluation Plan: Self-Hosted Open Models
 
-**Author:** Claude · **Date:** 2026-11-16 · **Status:** PLANNED. Implementation starts only after E1 is complete (E1-D approved and the final E1 walkthrough done). E1's scope is unchanged by this document.
+**Author:** Claude · **Date:** 2026-11-16 (revised 2026-11-16 for the self-hosting requirement) · **Status:** PLANNED. Implementation starts only after E1 is complete (E1-D approved and the final E1 walkthrough done). E1's scope is unchanged by this document.
+**Self-hosting requirement (supersedes the earlier "local vs cloud" framing):** only models with downloadable weights, a usable inference implementation, and an eligible licence (Class A/A-tag; Class B only with user approval) are evaluated. **Proprietary API-only models (Gemini, GPT, Claude, Qwen API-only IDs, `mistral-ocr`) are excluded.** OpenRouter is allowed only as an optional, indicative test endpoint for eligible models. Scored results come from self-hosted inference. Policy, licence evidence and the full candidate table: [SELF_HOSTED_MODEL_SELECTION.md](SELF_HOSTED_MODEL_SELECTION.md) (SHM).
 **User decision (2026-11-16):** downloading and testing local OCR models is approved, even if they need a GPU. **NAMAA Qari-OCR is a mandatory candidate.** Accuracy, especially Arabic OCR accuracy, takes priority over local vs API. **No OCR solution is selected until the user has personally reviewed the comparison results.**
 
 Evidence labels as in MODEL_RESEARCH §0: [HF-API] = Hugging Face API metadata fetched 2026-11-16; [CARD] = model card statement; [VENDOR] = the authors' own benchmark claim; [ESTIMATE] = Claude's arithmetic, to be replaced by measurement; [MEASURED] = none yet.
@@ -28,7 +29,9 @@ Evidence labels as in MODEL_RESEARCH §0: [HF-API] = Hugging Face API metadata f
 | **Qari-OCR 0.4.0** (`NAMAA-Space/Qari-OCR-0.4.0-VL-4B-Instruct`) | LoRA adapter on `Qwen/Qwen3-VL-4B-Instruct` (4.44B params, BF16) | Adapter 0.31 GB + base ≈ 8.9 GB | Apache-2.0 (adapter and base) | — | [VENDOR] CER 0.122 / WER 0.256 on an unnamed set; "optimized for printed Islamic texts; may vary on modern fonts"; 300+ DPI recommended. **Contradicting third-party claim:** Nuqta's card reports QARI at CER 0.64 / WER 0.76 on Misraj-DocOCR (version not stated) |
 | **Qari-OCR v0.3** (`NAMAA-Space/Qari-OCR-v0.3-VL-2B-Instruct`) | Full fine-tune of Qwen2-VL-2B; layout via HTML/Markdown | 4.42 GB (2.21B params) | Apache-2.0 | — | [VENDOR] CER 0.300 / WER 0.485 |
 | **Qari-OCR 0.2.2.1** (`NAMAA-Space/Qari-OCR-0.2.2.1-VL-2B-Instruct`) | LoRA adapter on `unsloth/Qwen2-VL-2B-Instruct-unsloth-bnb-4bit` | Adapter 0.12 GB | Apache-2.0 | — | [VENDOR] v0.3 card states v0.2 has the best raw-text CER (0.061) |
-| **PaddleOCR-VL 1.6** (`PaddlePaddle/PaddleOCR-VL-1.6`) | Document parsing VLM (text, tables, charts, formulas); full pipeline includes layout detection | 1.92 GB; **official GGUF** `PaddlePaddle/PaddleOCR-VL-1.6-GGUF` | Apache-2.0 | updated 2026-11-06 | Arabic listed among supported scripts [CARD]; Arabic edit distance 0.122 reported for the first version (paper) [VENDOR]. No 1.6-specific Arabic number |
+| **PaddleOCR-VL 1.6** (`PaddlePaddle/PaddleOCR-VL-1.6`) | Document parsing VLM (text, tables, charts, formulas); full pipeline includes layout detection | 1.92 GB; **official GGUF** `PaddlePaddle/PaddleOCR-VL-1.6-GGUF` | Apache-2.0 (LICENSE file present) | updated 2026-11-06 | Arabic listed among supported scripts [CARD]; Arabic edit distance 0.122 reported for the first version (paper) [VENDOR]. No 1.6-specific Arabic number |
+| **PaddleOCR PP-OCRv5** (`PaddlePaddle/PP-OCRv5_server_det` + `PaddlePaddle/arabic_PP-OCRv5_mobile_rec`; ONNX variant `arabic_PP-OCRv5_mobile_rec_onnx`) | Classic detection + **Arabic-specific recognition** pipeline | < 0.1 GB | Apache-2.0 tag | 2025-10-16 | Older classic PaddleOCR measured CER 0.79 on KITAB-Bench; v5 Arabic is unmeasured. CPU-fast; contrasts with the VLM approaches |
+| **Qwen3-VL (general VLM baseline)**: `Qwen/Qwen3-VL-4B-Instruct` (Qari 0.4's own base, to measure the fine-tune's gain) and `Qwen/Qwen3-VL-8B-Instruct` | General VLM OCR | 8.9 / 17.5 GB bf16 | Apache-2.0 tag | 2025-10 | Qari's card reports CER 0.49 / 0.69 on its set [VENDOR of a competing model] |
 
 ### 2.2 Additional candidates (included when feasible; they rank by published Arabic evidence)
 
@@ -36,7 +39,8 @@ Evidence labels as in MODEL_RESEARCH §0: [HF-API] = Hugging Face API metadata f
 |---|---|---|---|---|---|
 | **Nuqta-Arabic-OCR 4B** (`SalahALHaismawi/Nuqta-Arabic-OCR-4B`) | Arabic OCR fine-tune of Qwen3.5-4B; text/Markdown with HTML tables, reading order | Apache-2.0 | 9.75 GB; **official GGUF** Q4_K_M 2.9 GB / Q8_0 4.8 GB + mmproj 0.67 GB | [VENDOR] KITAB-Bench CER 0.106 (0.113 excluding 234 test images also present in training data); Misraj-DocOCR CER 0.121 / WER 0.246; GGUF Q4 ≈ bf16 CER; "~2.5 min per 2.4 MP page on laptop CPU, 8 threads" | **Include** (strongest published Arabic numbers; CPU-feasible) |
 | Nuqta-Arabic-OCR 0.8B (+ official GGUF) | Small variant | Apache-2.0 | — | No CER published | Include as low-cost variant |
-| dots.ocr (`dots-studio/dots.ocr`) | Multilingual document parser (layout JSON with bboxes, reading order, HTML tables) | MIT | 3B; GGUF by `ggml-org` | [VENDOR-3rd] Misraj-DocOCR CER 0.40 (from Nuqta's card); no Arabic metric from its authors | Include if the llama.cpp GGUF path runs; otherwise GPU-only, documented |
+| dots.ocr (`dots-studio/dots.ocr`) | Multilingual document parser (layout JSON with bboxes, reading order, HTML tables) | **Class B**: custom "dots.ocr LICENSE AGREEMENT" on top of MIT (PRC law, termination on prohibited use; SHM §2.1) | 3B; GGUF by `ggml-org` | [VENDOR-3rd] Misraj-DocOCR CER 0.40 (from Nuqta's card); no Arabic metric from its authors | **Only with user approval** (Class B). Then: GGUF path if it runs, otherwise GPU-only, documented |
+| Larger general VLMs: `Qwen/Qwen3.8-27B` (Apache-2.0, LICENSE present), `Qwen/Qwen3-VL-30B-A3B-Instruct`, `Qwen/Qwen3-VL-32B-Instruct`, `google/gemma-4-31b-it` (Apache-2.0 tag), `mistralai/Mistral-Small-3.2-24B-Instruct-2506`, `openbmb/MiniCPM-V-4_5`, `OpenGVLab/InternVL3_5-8B` | General VLM OCR; also Stage-2 visual analysis candidates (E4) | Class A / A-tag | 8.5–33B (17–67 GB bf16) | No Arabic OCR numbers | **GPU only** (P1/P2 profiles, SHM §5). Self-hosted on an approved GPU. An OpenRouter run (where available) is indicative only |
 | AIN-7B (`MBZUAI/AIN`) | Arabic-English LMM (Qwen2-VL base) | MIT | 8.29B params (33 GB F32 files) | [VENDOR] KITAB-Bench CER 0.20 (via Nuqta's card); OCR & doc understanding 72.35 on its own benchmark | **GPU-only** here (bf16 ≈ 16.6 GB exceeds RAM) [ESTIMATE] → cloud-GPU path or documented blocker |
 | DeepSeek-OCR (`deepseek-ai/DeepSeek-OCR`) | Multilingual OCR | MIT | 3.34B | No Arabic metric found | GPU-only per card (CUDA + flash-attn). Optional on cloud GPU |
 | Tesseract 5 (`ara` traineddata) | Traditional OCR baseline | Apache-2.0 | small | KITAB-Bench CER 0.54 [PUBLISHED] | **Include as floor baseline** (CPU, cheap) |
@@ -49,17 +53,17 @@ Evidence labels as in MODEL_RESEARCH §0: [HF-API] = Hugging Face API metadata f
 | Surya | Repo gated (401); KITAB-Bench CER 4.95 [PUBLISHED] |
 | olmOCR-2-7B | Trained for English-centric documents; no Arabic claim |
 | Community GGUF conversions of Qari (`marwan-osama/…`, `mradermacher/…`) | Unknown conversion source, and the `marwan-osama` repo states no licence. **Not scored as Qari.** We build our own conversion from official weights (§4) |
+| **All proprietary API-only models**: Gemini (all), GPT-5.x / GPT-4o, Claude, `qwen/qwen3.7-*`, `qwen/qwen3.8-max*`, `qwen/qwen4-max`, `mistral-ocr`, OpenRouter `cloudflare-ai` parser | No downloadable weights / external service: **excluded by the self-hosting requirement** (SHM §3) |
+| MinerU2.5 | AGPL-3.0 (Class B): only with user approval |
+| Qwen2.5-VL-3B / 72B | `qwen-research` (non-commercial) / custom `qwen` licence (Class C) |
 
-## 3. Cloud candidates (OpenRouter), re-verified against `/api/v1/models` at E2 kickoff
+## 3. OpenRouter as an optional test endpoint (eligible models only)
 
-Since accuracy outranks cost, include at least one **upper-bound** tier per family:
-
-| Family | Cost-efficient | Upper bound |
-|---|---|---|
-| Gemini | `google/gemini-3.1-flash-lite`, `google/gemini-3.7-flash` | `google/gemini-3.1-pro-preview` (or the current Gemini Pro ID) |
-| Qwen | `qwen/qwen3.7-flash`, `qwen/qwen3-vl-235b-a22b-instruct` | `qwen/qwen3.7-plus` (or the current Qwen Max/VL flagship) |
-| Others | `openai/gpt-5.6-luna`, `anthropic/claude-haiku-5.5` | one flagship if budget allows |
-| Dedicated OCR | `mistral-ocr` via the file-parser plugin ($2 / 1,000 pages) | — |
+OpenRouter is **not** a candidate source. It may serve an eligible open-weight model for a quick, **indicative** comparison before self-hosting it: `qwen/qwen3-vl-8b-instruct`, `qwen/qwen3-vl-30b-a3b-instruct`, `qwen/qwen3-vl-235b-a22b-instruct`, `qwen/qwen3.5-27b`, `qwen/qwen3.6-27b`, `google/gemma-4-31b-it`, `mistralai/mistral-small-3.2-24b-instruct`, `z-ai/glm-4.6v` (all in the 2026-11-16 catalog). Rules:
+- The OpenRouter ID is mapped to the HF repo + revision in the model registry. If the mapping is uncertain, the run is not counted at all.
+- Fixtures and non-sensitive documents only by default; real company documents only with the user's explicit per-run approval.
+- Results are labelled **"indicative (third-party serving)"** and excluded from ranking. Ranking uses self-hosted runs of the same weights.
+- Useful for upper-bound models too large for the available hardware (e.g. Qwen3-VL-235B). This shows what capacity would buy, before the company sizes hardware.
 
 ## 4. CPU/GPU feasibility assessment and execution paths
 

@@ -1,15 +1,48 @@
 # AgenticDoc — Technical Design
 
 **Author:** Claude · **Date:** 2026-11-16 · **Status:** Target architecture for the product **after E5**. Implementation is deferred by the evaluation-first strategy (IMPLEMENTATION_PLAN §0). §5 (document processing) and all model choices are **hypotheses to be validated in the Extraction Lab** ([EXTRACTION_LAB_DESIGN.md](EXTRACTION_LAB_DESIGN.md)). Changes are recorded in §13.
-**Inputs:** [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md), [MODEL_RESEARCH.md](MODEL_RESEARCH.md).
+**Inputs:** [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md), [MODEL_RESEARCH.md](MODEL_RESEARCH.md), **[SELF_HOSTED_MODEL_SELECTION.md](SELF_HOSTED_MODEL_SELECTION.md) (mandatory, 2026-11-16)**.
 
 ---
+
+## 0. Self-hosting requirement (2026-11-16; overrides the OpenRouter-first design in §2, §10, §11)
+
+**Requirement:** the production system must be able to run entirely inside company infrastructure without sending documents to any external AI service. Every model must be downloadable and self-hostable, with a licence that is eligible under SHM §1. Proprietary API-only models are excluded.
+
+### 0.1 Inference gateway with provider adapters
+All AI calls go through `src/inference/` (built in E5). No other module talks to a model server directly.
+
+| Role interface | Methods | Backends (adapters) |
+|---|---|---|
+| `ChatModel` | `chat(messages, …) -> ChatResult` | `openai_compatible` (vLLM, llama.cpp server, SGLang, Ollama; OpenRouter only in the evaluation profile) |
+| `VisionModel` | `analyze(image, prompt, schema) -> VisionResult` | `openai_compatible` (vLLM / llama.cpp multimodal) |
+| `OCREngine` | `ocr_page(image, hints) -> list[DraftElement]` | `openai_compatible` VLM-OCR (Qari, Nuqta, PaddleOCR-VL, Qwen-VL), `paddleocr` (PP-OCRv5 / PaddleOCR-VL pipeline, in-process or serving), `tesseract` |
+| `Embedder` | `embed(texts, kind=query\|document) -> vectors` | `openai_compatible` (vLLM pooling), `tei` (HF Text Embeddings Inference), `sentence_transformers` (in-process, dev) |
+| `Reranker` | `rerank(query, docs, top_n)` | `tei`, `vllm_score`, `sentence_transformers` |
+
+- **One HTTP client** for all `openai_compatible` backends, with configurable `base_url`. vLLM, llama.cpp and OpenRouter all expose this API, so the *same* code path runs against a test endpoint or an internal server.
+- **Model registry** `config/models.yaml`, with one entry per deployable model: `role`, `backend`, `base_url`, `served_model_name`, `hf_repo`, `hf_revision`, `weights_sha256`, `licence_class` (+ evidence link), `hardware_profile`, `prompt_profile`, optional `openrouter_alias`. **No production default is set until the user approves one** (§0.3). Until then, the app refuses to start a role that has no approved model.
+- **Deployment profiles:**
+  - `production`: `allow_external_inference=false` is enforced in the client. Every request host must be on `internal_inference_hosts` (allow-list), otherwise it fails before sending. The check also runs at startup. No API keys are required.
+  - `evaluation`: external endpoints allowed only for registry models of Class A/A-tag whose `openrouter_alias` is set, behind explicit user action (Lab confirmation flow).
+- **Reliability:** the timeouts, retries, typed errors and usage ledger from §11 apply to every backend. Usage records tokens, latency and, for local backends, GPU time instead of $ cost.
+- **Packaging:** Docker Compose (and optionally Kubernetes manifests) for `app`, `vllm` (one service per model or multi-LoRA), `llama-cpp` (CPU fallback), `tei`, and `paddleocr`. Images and tags are pinned. Weights are mounted read-only from an internal model store. `HF_HUB_OFFLINE=1`; vLLM telemetry disabled (`VLLM_NO_USAGE_STATS=1`, `DO_NOT_TRACK=1`); egress blocked except to the inference hosts.
+
+### 0.2 Effects on the rest of this document
+- §2: "OpenRouterClient" is replaced by the inference gateway. §10/§11: privacy routing (`provider.data_collection`, `zdr`) applies only to evaluation-profile calls. In production, no data leaves the company network, so third-party retention doesn't arise.
+- §5.4 OCR engines: `VLMOCREngine` and `MistralOCREngine` are replaced by the `OCREngine` adapters above. `mistral-ocr` is excluded.
+- §5.5 / §7 vision stages: run on a self-hosted VLM. Stage-2 caching is unchanged.
+- §6.2 embeddings / §6.5 reranking: self-hosted models only (SHM §2.3/§2.4). bge-m3's native sparse vectors are a candidate for the hybrid retrieval in §6.4.
+- §9 agents: the ReAct engine depends only on `ChatModel`. The prompt format must work with the selected open model (tested in the Phase 5 bake-off).
+
+### 0.3 Model approval gate
+A model becomes a production default only when: (1) its licence class is A/A-tag, with the licence text confirmed for the pinned revision and legal sign-off recorded; (2) its scores come from self-hosted inference on the identical verified Arabic test sets; (3) **the user has personally reviewed the results and approved it**, recorded in `docs/reviews/CLAUDE_REVIEW.md` with the result set IDs.
 
 ## 1. Goals and non-goals
 
 **Goals:** multimodal, multi-document, Arabic-first RAG over TXT, native PDFs and scanned PDFs; typed document elements with page-level provenance; grounded answers whose citations are produced by the server, never invented by the model; temporary session storage; preservation of the custom ReAct engine, Tool Registry, Summarizer, Question Generator and Chatbot.
 
-**Non-goals (this project stage):** frontend; user accounts/authentication; permanent storage; DOCX/PPTX/XLSX; handwriting recognition guarantees; local GPU model serving (adapter interfaces only).
+**Non-goals (this project stage):** frontend; user accounts/authentication; permanent storage; DOCX/PPTX/XLSX; handwriting recognition guarantees. (Self-hosted model serving was previously a non-goal. It is now **required**, see §0.)
 
 ## 2. Target architecture
 
@@ -334,7 +367,7 @@ CLI (`python -m src.main <file> [<file>...]`) uses the same services in-process.
 
 ## 11. Reliability, observability, cost
 
-- **OpenRouterClient**: `requests.Session`; connect timeout 10 s, read timeout 120 s (vision 180 s); retries with exponential backoff + jitter on 429/5xx/timeouts (max 4, honoring `Retry-After`); no retry on 400/401/402/403; typed errors (`AuthError`, `RateLimitError`, `UpstreamError`, `InvalidResponseError`, `ContentTooLargeError`); response schema validation; `HTTP-Referer`/`X-Title` headers; `provider` privacy object on every request.
+- **Inference client** (§0.1; formerly "OpenRouterClient", superseded 2026-11-16): `requests.Session`; connect timeout 10 s, read timeout 120 s (vision 180 s); retries with exponential backoff + jitter on 429/5xx/timeouts (max 4, honoring `Retry-After`); no retry on 400/401/402/403; typed errors (`AuthError`, `RateLimitError`, `UpstreamError`, `InvalidResponseError`, `ContentTooLargeError`); response schema validation; `HTTP-Referer`/`X-Title` headers; `provider` privacy object on every request.
 - **Usage ledger**: every call records `{trace_id, session_id, operation, model, prompt_tokens, completion_tokens, image_count, cost_usd (from response usage if provided, else estimated from catalog price table), latency_ms, status}`; aggregated per session and returned in API responses. Per-session budget `SESSION_MAX_COST_USD` (default $1.00) → `budget_exceeded`.
 - **Tracing**: structured JSON log events (`agent.step`, `tool.call`, `llm.call`, `ingest.page`, `vision.cache_hit`). Content-free at INFO (lengths, hashes, IDs only). `DEBUG_CONTENT_LOGGING=true` enables content in logs for local development only; refuses to start with it when `ENV=production`.
 - **Redaction**: API key never logged; exceptions logged with type + status code, not request bodies.
@@ -356,4 +389,5 @@ CLI (`python -m src.main <file> [<file>...]`) uses the same services in-process.
 |---|---|---|
 | 2026-11-16 | Initial design | — |
 | 2026-11-16 | Implementation deferred; §5 and model choices become Lab hypotheses (E1–E4), finalized in E5 | User requested evaluation-first strategy |
+| 2026-11-16 | **Self-hosting requirement:** new §0 (inference gateway, provider adapters, model registry, production egress enforcement, approval gate); OpenRouter demoted to an evaluation-only test endpoint for eligible open-weight models; proprietary API models excluded | User requirement; SELF_HOSTED_MODEL_SELECTION.md |
 | 2026-11-16 | §5.2/§5.3 caveat: "native" pages are not exact by default. The page classifier must use E1-measured signals (presentation forms, ligatures, digit forms, reversal), and the "no reversal heuristics" rule in §5.3 is re-decided in E5 from E1 data | Feasibility probe, EXTRACTION_LAB_DESIGN §7 |
