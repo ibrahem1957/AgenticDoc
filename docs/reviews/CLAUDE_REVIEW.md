@@ -164,3 +164,42 @@ Independent reviews of Codex's work. Each entry states whether verification was 
 | 15c | Page image user-verified; the overlay not reported |
 
 **Verdict:** **E1-A is NOT approved.** The correction task is in `docs/handoff/CODEX_TASK_E1-A_CORRECTIONS.md`. **E1-B must not start.** The E1-B task will be prepared after the re-review approves E1-A. Re-review plan: read the committed diff, check the report's evidence, re-inspect the fixture PNGs, and run the test suite and M1/M2/M3 probes **only if the user agrees to Claude running them**.
+
+## Entry 8 — E1-A runtime verification: baseline on Codex's uncommitted tree (2026-11-16) — **still NOT APPROVED**
+**User approval:** run the full suite, coverage, fixture generation, the bench and targeted M1–M3 tests in a separate review location. Don't touch Codex's checkout. Final approval only on the **committed** corrected branch. No E1-B without explicit user approval.
+
+**Status of Codex's corrections:** **not yet available.** `origin/phase-e1-extraction-lab` doesn't exist. Codex's checkout is still at `6020cd4` with uncommitted E1-A work, and B1 is still open. This entry is therefore a **baseline** run on a fresh read-only snapshot of that uncommitted tree (identical to Entry 7's snapshot: `diff -rq` clean). It confirms the findings at runtime. It is **not** the approval run.
+
+**Environment:** Windows 11 Pro, Python 3.12.10, clean venv from `lab/requirements-lab.txt` (streamlit 1.67.0, PyMuPDF 1.26.5, pypdfium2 5.2.0, pdfplumber 0.11.7, pypdf 6.1.1, python-bidi 0.6.6, RapidFuzz 3.14.1, pydantic 2.12.3, pillow 12.0.0). `LAB_TMP_DIR` was a short temp root outside the repo, deleted afterwards. Logs and the harness are in Claude's scratchpad: `review_e1a/verify.sh`, `review_e1a/checks/*.py`, `review_e1a/runs/baseline_uncommitted/`.
+
+**Commands (run from the snapshot's `Project sdaia/`):**
+```
+ruff check --no-cache lab tests/lab
+pytest tests/lab -q -p no:cacheprovider --cov=lab.core --cov-report=term-missing
+python -m lab.fixtures.generate_fixtures
+python -m lab.core.bench --fixtures lab/fixtures/generated --out <run>/bench
+PYTHONPATH=. python checks/review_checks.py <tmp>/probes tests/lab/data
+```
+
+**Results:**
+
+| Check | Result |
+|---|---|
+| Ruff | `All checks passed!` |
+| pytest | **26 passed**, 0 failed (5 SWIG deprecation warnings from PyMuPDF) |
+| Coverage `lab.core` | **89% total**. `runner.py` 88% (missing 32-49, i.e. the child-process body isn't measured), `ingest.py` 90%, `bench.py` **0%**, `models.py` 100% |
+| Fixture generation | exit 0; both producers (PyMuPDF and Edge/Chromium) |
+| Bench | exit 0; 64 local adapter runs, all `ok`; image-only fixture → page `empty` for all 4 adapters. pdfminer prints harmless CMap warnings |
+| **M1** probe: 3 pages × 600,000 Arabic chars (≈ 3.6 MB UTF-8), timeout 20 s | **FAIL, confirmed**: `status=timeout`, `pages=0`, text lost. The adapter finished, but the parent's `join()` blocked on the undrained queue |
+| **M2a** probe: stub whose module import sleeps 1.5 s, instant extraction | **FAIL, confirmed**: `wall_ms=1505` (import counted as extraction) |
+| **M2b** real adapters, 1-page fixture | PyMuPDF wall 114.7 ms vs per-page 6.1 ms; pdfplumber 107.9 vs 2.7; pypdfium2 16.8 vs 9.8 (per-page *includes* overlay construction); pypdf 5.0 vs 1.4. The bench's "Wall ms" column mainly measures **library import time**, so it misleadingly makes PyMuPDF and pdfplumber look ~10× slower. No separate overlay timing exists |
+| **M3** probe: adapter that times out on the first call only | **FAIL, confirmed**: the second identical call returned the cached `timeout` with `cache_hit=True` and never executed. The third call also replayed the cache. No re-run control in the UI |
+| Fixture renders (regenerated) | `ar_two_column` PyMuPDF: **still one column** (M4 open). `header_footer`: unchanged generator, **M5 open**. Chromium variants correct |
+| `src/` | no changes (`git status` of Codex's checkout) |
+
+**New finding:** **m9 (Minor, Windows MAX_PATH).** Long cache filenames (`.cache_<64 hex>.json.<8 hex>.tmp`) under a deep `LAB_TMP_DIR` exceed 260 characters, so `atomic_write_json` raises `FileNotFoundError` and both `test_ui_pages` and the bench crash. Reproduced on Claude's first harness run with the scratchpad as the temp root. Added to the correction task, together with the bench timing-column requirement.
+
+**Harness issues (Claude's own, fixed before the reported run):** the probe script lacked `PYTHONPATH=.`, and the deep scratchpad temp root triggered m9. The numbers above come from the fixed run.
+
+**Open:** B1, M1, M2, M3, M4, M5 (and minors m1–m9).
+**Verdict:** **E1-A NOT APPROVED.** Waiting for Codex's committed corrections and `CODEX_REPORT_E1-A.md`. Re-review: `verify.sh <review worktree of origin/phase-e1-extraction-lab> corrected_r1`, PNG inspection, diff and report reading. **E1-B not started; it requires explicit user approval after E1-A is approved.**

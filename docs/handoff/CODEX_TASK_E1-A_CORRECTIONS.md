@@ -36,6 +36,12 @@ Merging `origin/planning/multimodal-rag` into your branch is only needed **after
 - **m6 (user decision):** remove the OpenRouter file-parser entry from `adapters.toml`, the OpenRouter/cost/ZDR keys from `lab.toml` and `settings.py`, and the "API key configured" line on Home. E1 makes no network calls.
 - **m7:** fixture tags must match what is rendered (e.g. `ar_single_column` is tagged `headings` but has no heading styling). Either style the first line as a heading (larger/bold) or drop the tag.
 - **m8:** cap rendered image-document pages at 4,000 px on the longest side, as for PDFs.
+- **m9 (added after Claude's runtime verification, CLAUDE_REVIEW Entry 8):** Windows path length.
+  - Cache files are named `.cache_<64 hex>.json.<8 hex>.tmp` inside `ws_<22 chars>/runs/`. With a deep `LAB_TMP_DIR`, the full path exceeds Windows' 260-character limit, and `atomic_write_json` raises `FileNotFoundError`. Reproduced: `test_ui_pages` and the bench both crashed.
+  - Fix: shorten cache filenames (e.g. the first 32 hex characters of the key, with the full key stored inside the JSON) and the temp suffix. Turn path errors into a clear message that names the configured root.
+  - Test: a `tmp_dir` whose path is at least 150 characters long must work.
+- **Bench timing column:** once M2 is fixed, the bench report must show extraction time (excluding imports and overlay), labelled as such. The current "Wall ms" column is dominated by library import time (Entry 8).
+- **Verification note for you:** Claude's probe scripts that will be used for re-review are described in CLAUDE_REVIEW Entry 8. Your own tests for M1–M3 must cover the same behaviours: ≥ 1 MB output, import time excluded, no replay of cached failures.
 
 ## 4. Unchanged scope
 No E1-B features (variants, GT, metrics, review), no network code, no `src/` changes. Keep all existing passing behaviour, including what the user verified manually: upload, four extractors, page rendering, raw comparison.
