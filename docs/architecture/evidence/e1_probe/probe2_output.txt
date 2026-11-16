@@ -1,0 +1,26 @@
+=== producer: pymupdf insert_htmlbox / arial.ttf
+  pymupdf    CER=0.644 CER_after_NFKC=0.269 pres_forms=51 | ﺍﻟﺗﻘﺭﻳﺭ ﺍﻟﺳﻧﻭﻱ ۲۰۲٥ ﺔﺑﺳﻧﺑ ﺕﺎﻌﻳﺑﻣﻟﺍ ﺕﻌﻔﺗﺭﺍ :۱۲٥٫٪ ﺇﻟﻰ 3.4 ﻣﻠﻳﻭﻥ ﷼. ﻣُﺣَﻣﱠﺩٌ ﺭﺳﻭﻝُ ﷲ. AgenticDoc v2
+  pypdfium2  CER=0.615 CER_after_NFKC=0.615 pres_forms=0 | ريرقتلا يونسلا :۲۰۲٥ تعفترا تاعيبملا ةبسنب ٪۱۲٫٥ ىلإ 3.4 نويلم .ریال ُم َح َّمٌد لوسر ُ .الله 2v AgenticDoc
+  pypdf      CER=0.654 CER_after_NFKC=0.529 pres_forms=51 | ﺭﻳﺭﻘﺗﻟﺍ ﻱﻭﻧﺳﻟﺍ ۲۰۲٥: ﺕﻌﻔﺗﺭﺍ ﺕﺎﻌﻳﺑﻣﻟﺍ ﺔﺑﺳﻧﺑ ۱۲٫٥٪ ﻰﻟﺇ 3.4 ﻥﻭﻳﻠﻣ .﷼ ٌﺩﱠﻣَﺣُﻣ ُﻝﻭﺳﺭ .ﷲ AgenticDoc v2
+  pdfplumber CER=0.894 CER_after_NFKC=0.904 pres_forms=51 | AgenticDoc v2 .ﷲ ﻝُ ﻭﺳﺭ ﺩٌ ﻣﱠ ﺣَ ﻣُ .﷼ ﻥﻭﻳﻠﻣ 3.4 ﻰﻟﺇ ٪۱۲٫٥ ﺔﺑﺳﻧﺑ ﺕﺎﻌﻳﺑﻣﻟﺍ ﺕﻌﻔﺗﺭﺍ :۲۰۲٥ ﻱﻭﻧﺳﻟﺍ ﺭﻳﺭﻘﺗﻟﺍ
+=== producer: pymupdf insert_htmlbox / tahoma.ttf
+  pymupdf    CER=0.644 CER_after_NFKC=0.269 pres_forms=51 | ﺍﻟﺘﻘﺮﻳﺮ ﺍﻟﺴﻨﻮﻱ ۲۰۲٥ ﺔﺒﺴﻨﺑ ﺕﺎﻌﻴﺒﻤﻟﺍ ﺖﻌﻔﺗﺭﺍ :۱۲٥٫٪ ﺇﻟﻰ 3.4 ﻣﻠﻴﻮﻥ ﷼. ﻣُﺤَﻤﱠﺪٌ ﺭﺳﻮﻝُ ﷲ. AgenticDoc v2
+  pypdfium2  CER=0.663 CER_after_NFKC=0.663 pres_forms=0 | ريرقتلا يونسلا :۲۰۲٥ تعفترا تاعيبملا ةبسنب ٪۱۲٫٥ ىلإ 3.4 نويلم .ریال ُم َح َّم ٌد لوسر ُ AgenticDoc v2 الله.
+  pypdf      CER=0.654 CER_after_NFKC=0.529 pres_forms=51 | ﺮﻳﺮﻘﺘﻟﺍ ﻱﻮﻨﺴﻟﺍ ۲۰۲٥: ﺖﻌﻔﺗﺭﺍ ﺕﺎﻌﻴﺒﻤﻟﺍ ﺔﺒﺴﻨﺑ ۱۲٫٥٪ ﻰﻟﺇ 3.4 ﻥﻮﻴﻠﻣ .﷼ ٌﺪﱠﻤَﺤُﻣ ُﻝﻮﺳﺭ .ﷲ AgenticDoc v2
+  pdfplumber CER=0.827 CER_after_NFKC=0.808 pres_forms=51 | ﻝُ ﻮﺳﺭ ﺪٌ ﻤﱠ ﺤَ ﻣُ .﷼ ﻥﻮﻴﻠﻣ 3.4 ﻰﻟﺇ ٪۱۲٫٥ ﺔﺒﺴﻨﺑ ﺕﺎﻌﻴﺒﻤﻟﺍ ﺖﻌﻔﺗﺭﺍ :۲۰۲٥ ﻱﻮﻨﺴﻟﺍ ﺮﻳﺮﻘﺘﻟﺍ AgenticDoc v2 .ﷲ
+=== producer: pymupdf insert_htmlbox / times.ttf
+  pymupdf    CER=0.654 CER_after_NFKC=0.298 pres_forms=51 | ﺍﻟﺘﻘﺮﻳﺮ ﺍﻟﺴﻨﻮﻱ ۲۰۲٥ ﺔﺒﺴﻨﺑ ﺕﺎﻌﻴﺒﻤﻟﺍ ﺖﻌﻔﺗﺭﺍ :۱۲٥٫٪ ﻰﻟﺇ3.4 ﻣﻠﻴﻮﻥ ﷼. ﻣُﺤَﻤﱠﺪٌ ﺭﺳﻮﻝُ ﷲ. AgenticDoc v2
+  pypdfium2  CER=0.606 CER_after_NFKC=0.606 pres_forms=0 | ريرقتلا يونسلا :۲۰۲٥ تعفترا تاعيبملا ةبسنب ٪۱۲٫٥ ىلإ 3.4 نويلم .ریال ُم َح َّمدٌ لوسر ُ .الله 2v AgenticDoc
+  pypdf      CER=0.654 CER_after_NFKC=0.529 pres_forms=51 | ﺮﻳﺮﻘﺘﻟﺍ ﻱﻮﻨﺴﻟﺍ ۲۰۲٥: ﺖﻌﻔﺗﺭﺍ ﺕﺎﻌﻴﺒﻤﻟﺍ ﺔﺒﺴﻨﺑ ۱۲٫٥٪ ﻰﻟﺇ 3.4 ﻥﻮﻴﻠﻣ .﷼ ٌﺪﱠﻤَﺤُﻣ ُﻝﻮﺳﺭ .ﷲ AgenticDoc v2
+  pdfplumber CER=0.894 CER_after_NFKC=0.894 pres_forms=51 | AgenticDoc v2 .ﷲ ﻝُ ﻮﺳﺭ ٌﺪﻤﱠ ﺤَ ﻣُ .﷼ ﻥﻮﻴﻠﻣ 3.4 ﻰﻟﺇ ٪۱۲٫٥ ﺔﺒﺴﻨﺑ ﺕﺎﻌﻴﺒﻤﻟﺍ ﺖﻌﻔﺗﺭﺍ :۲۰۲٥ ﻱﻮﻨﺴﻟﺍ ﺮﻳﺮﻘﺘﻟﺍ
+=== producer: pymupdf insert_htmlbox / segoeui.ttf
+  pymupdf    CER=0.615 CER_after_NFKC=0.067 pres_forms=54 | ﺍﻟﺘﻘﺮﻳﺮ ﺍﻟﺴﻨﻮﻱ ٥٢٠٢ : ﺍﺭﺗﻔﻌﺖ ﺍﻟﻤﺒﻴﻌﺎﺕ ﺑﻨﺴﺒﺔ ٥٫٢١٪ ﺇﻟﻰ 3.4 ﻣﻠﻴﻮﻥ ﺭﻳﺎﻝ. ﻣُﺤَﻤﱠﺪٌ ﺭﺳﻮﻝُ ﷲ. AgenticDoc v2
+  pypdfium2  CER=0.538 CER_after_NFKC=0.538 pres_forms=0 | ريرقتلا يونسلا :٢٠٢٥ تعفترا تاعيبملا ةبسنب ٪١٢٫٥ ىلإ 3.4 نويلم .لاير م ُ َح َّم لوسر ُ .الله ٌد AgenticDoc v2
+  pypdf      CER=0.760 CER_after_NFKC=0.673 pres_forms=54 | ﻰﻟﺇ ٪٥٫٢١ ﺔﺒﺴﻨﺑ ﺕﺎﻌﻴﺒﻤﻟﺍ ﺖﻌﻔﺗﺭﺍ :٥٢٠٢ ﻱﻮﻨﺴﻟﺍ ﺮﻳﺮﻘﺘﻟﺍ3.4 .ﷲ ُﻝﻮﺳﺭ ٌﺪﱠﻤَﺤُﻣ .ﻝﺎﻳﺭ ﻥﻮﻴﻠﻣ AgenticDoc v2
+  pdfplumber CER=0.808 CER_after_NFKC=0.788 pres_forms=54 | .ﷲ ﻝُ ﻮﺳﺭ ﺪ ٌ ﻤﱠ ﺤ َ ﻣ ُ .ﻝﺎﻳﺭ ﻥﻮﻴﻠﻣ 3.4 ﻰﻟﺇ ٪١٢٫٥ ﺔﺒﺴﻨﺑ ﺕﺎﻌﻴﺒﻤﻟﺍ ﺖﻌﻔﺗﺭﺍ :٢٠٢٥ ﻱﻮﻨﺴﻟﺍ ﺮﻳﺮﻘﺘﻟﺍ AgenticDoc v2
+=== producer: Edge headless print-to-pdf / Arial
+  pymupdf    CER=0.894 CER_after_NFKC=0.894 pres_forms=0 | AgenticDoc v2 . مليون لاير. ُم َح َّم ٌد رسو ُل هللا3.4 إلى٪٥٫٢١ ٥٢٠٢: ارتفعت المبيعات بنسبة التقرير السنوي
+  pypdfium2  CER=0.269 CER_after_NFKC=0.250 pres_forms=0 | التقرير السنوي :٢٠٢٥ ارتفعت المبيعات ةبسنب ٪١٢٫٥ ىلإ 3.4 مليون لاير. مُحَمَّدٌ لوسرُ هللا. 2v AgenticDoc
+  pypdf      CER=0.904 CER_after_NFKC=0.885 pres_forms=33 | AgenticDoc v2 . ﻣﻠﯾون ﷼. ﻣُﺣَﻣﱠدٌ رﺳولُ ﷲ3.4 ٪ إﻟﻰ٥٫٢١: ارﺗﻔﻌت اﻟﻣﺑﯾﻌﺎت ﺑﻧﺳﺑﺔ ٥٢٠٢اﻟﺗﻘرﯾر اﻟﺳﻧوي
+  pdfplumber CER=0.894 CER_after_NFKC=0.904 pres_forms=33 | AgenticDoc v2 .ﷲ لُ وﺳر دٌ ﻣﱠ ﺣَ ﻣُ .﷼ نوﯾﻠﻣ 3.4 ﻰﻟإ ٪١٢٫٥ ﺔﺑﺳﻧﺑ تﺎﻌﯾﺑﻣﻟا تﻌﻔﺗرا :٢٠٢٥ يوﻧﺳﻟا رﯾرﻘﺗﻟا
+GT: التقرير السنوي ٢٠٢٥: ارتفعت المبيعات بنسبة ١٢٫٥٪ إلى 3.4 مليون ريال. مُحَمَّدٌ رسولُ الله. AgenticDoc v2

@@ -1,0 +1,6 @@
+pymupdf_segoeui.ttf.pdf  pypdfium2  raw=0.538 bidi_reorder=0.644 bidi+NFKC=0.644
+pymupdf_segoeui.ttf.pdf  pdfplumber raw=0.808 bidi_reorder=0.798 bidi+NFKC=0.490
+pymupdf_arial.ttf.pdf    pypdfium2  raw=0.615 bidi_reorder=0.885 bidi+NFKC=0.885
+pymupdf_arial.ttf.pdf    pdfplumber raw=0.894 bidi_reorder=0.644 bidi+NFKC=0.154
+edge.pdf                 pypdfium2  raw=0.269 bidi_reorder=0.894 bidi+NFKC=0.894
+edge.pdf                 pdfplumber raw=0.894 bidi_reorder=0.433 bidi+NFKC=0.135
